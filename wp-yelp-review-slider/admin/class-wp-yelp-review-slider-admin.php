@@ -275,18 +275,25 @@ class WP_Yelp_Review_Admin {
 		);
 
 		//Turn on Yelp Reviews Downloader
+		/*
 		add_settings_field("yelp_radio", "Turn On Yelp Reviews", array($this,'yelp_radio_display'), "wp_yelp-get_yelp", "wpyelp_yelp_section_developers",
 			[
 				'label_for'         => 'yelp_radio',
 				'class'             => 'wpyelp_row',
 				'wpyelp_custom_data' => 'custom',
-			]); 
+			]); */
 	
 	}
 	//==== developers section cb ====
 	public function wpyelp_yelp_section_developers_cb($args)
 	{
 		//echos out at top of section
+		
+		_e("<p>Use this page to download your Yelp business reviews and save them in your Wordpress database. Please note that the plugin can only return recommended reviews. They will show up on the Review List page once downloaded.
+		</br></br>
+		(<b>Note: This may not work for everyone.</b> <a href='https://wpreviewslider.com/' target='_blank'>Contact me</a> for help. Yelp has gotten good at blocking web crawlers. The Pro Version is still working and allows you to grab <b>all your reviews</b> from <b>multiple locations</b>.)", 'wp-yelp-reviews');
+		
+		/*
 		_e("<p>Use this page to download your Yelp business reviews and save them in your Wordpress database. Please note that the plugin can only return recommended reviews. They will show up on the Review List page once downloaded. There are a couple of rules that Yelp has for their reviews.</p>
 		<ul>
 			<li> - Yelp reviews can only be cached for 24 hours. So your newest reviews will be automatically downloaded and updated every 24 hours. </li>
@@ -294,6 +301,7 @@ class WP_Yelp_Review_Admin {
 		</ul>
 		</br>
 		(<b>Note: This may not work for everyone.</b> <a href='https://wpreviewslider.com/' target='_blank'>Contact me</a> for help. Yelp has gotten good at blocking web crawlers. The Pro Version is still working and allows you to grab <b>all your reviews</b> from <b>multiple locations</b>.)", 'wp-yelp-reviews'); 
+		*/
 	}
 	
 	//==== field cb =====
@@ -731,13 +739,223 @@ class WP_Yelp_Review_Admin {
 		return $data;
 	}
 	
-	/**
+	
+/**
 	 * download yelp reviews
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  void
 	 */	
 	public function wpyelp_download_yelp_master($iscron='') {
+	//ini_set('display_errors', 1);
+//ini_set('display_startup_errors', 1);
+//error_reporting(E_ALL);	
+		//make sure file get contents is turned on for this host
+		//if (ini_get('allow_url_fopen') == 1) {
+		$errormsg='';
+		$insertnum='';
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'wpyelp_reviews';
+			$options = get_option('wpyelp_yelp_settings');
+			
+			//make sure you have valid url, if not display message
+			if (filter_var($options['yelp_business_url'], FILTER_VALIDATE_URL)) {
+			  // you're good
+			  //echo "valid url";
+
+				//echo "passed both tests";
+				$stripvariableurl = strtok($options['yelp_business_url'], '?');
+				$yelpurl[1] = $stripvariableurl.'?sort_by=date_desc';
+				//if($iscron==''){
+				//$yelpurl[2] = $stripvariableurl.'?start=10';
+				//$yelpurl[3] = $stripvariableurl.'?start=20&sort_by=date_desc';
+				//}
+				//$yelpurl[4] = $stripvariableurl.'?start=30&sort_by=date_desc';
+				
+				//include_once('simple_html_dom.php');
+				//loop to grab pages
+				$reviews = [];
+				$n=1;
+				if(isset($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR']!=''){
+					$ip_server = $_SERVER['SERVER_ADDR'];
+				} else {
+					//get url of site.
+					$ip_server = urlencode(get_site_url());
+				}
+				$siteurl = urlencode(get_site_url());
+				$x=1;
+				foreach ($yelpurl as $urlvalue) {
+					// Create DOM from URL or file
+					//$html = file_get_html($urlvalue);
+						
+					// Create DOM from URL or file
+					$tempurlval = 'https://crawl.ljapps.com/crawlrevs?rip='.$ip_server.'&surl='.$siteurl.'&scrapeurl='.$urlvalue.'&stype=yelp&sfp=pro&nobot=1&nhful=&locationtype=&scrapequery=&tempbusinessname=&pagenum='.$x.'&nextpageurl=';
+					
+					
+					$serverresponse='';
+					
+					$args = array(
+						'timeout'     => 120,
+						'sslverify' => false
+					); 
+					$response = wp_remote_get( $tempurlval, $args );
+					if ( is_array( $response ) && ! is_wp_error( $response ) ) {
+						$headers = $response['headers']; // array of http header lines
+						$serverresponse    = $response['body']; // use the content
+					} else {
+						//must have been an error
+						$results['ack'] ='error';
+						$results['ackmsg'] ='Error 0001a: trouble contacting crawling server with remote_get. Please try again or contact support. '.$response->get_error_message();
+						$results = json_encode($results);
+						echo $results;
+						die();
+					}
+					
+					//check for block or timeout
+					//====================
+					if (strpos($serverresponse, "Please wait while your request is being verified") !== false || !isset($serverresponse) || $serverresponse=='') {
+					   //this site is greylisted by imunify360 on cloudways, call backup digital ocean server
+					   $response = wp_remote_get( 'https://ocean.ljapps.com/crawlrevs.php?rip='.$ip_server.'&surl='.$siteurl.'&scrapeurl='.$listedurl.'&stype=yelp&sfp=pro&nobot=1&nhful='.$nhful.'&locationtype=&scrapequery=&tempbusinessname=&pagenum='.$pagenum.'&nextpageurl='.$nextpageurl, array( 'sslverify' => false, 'timeout' => 60 ) );
+						if ( is_array( $response ) && ! is_wp_error( $response ) ) {
+							$headers = $response['headers']; // array of http header lines
+							$serverresponse    = $response['body']; // use the content
+						}
+					}
+					//=========================
+					
+					$serverresponsearray = json_decode($serverresponse, true);
+					$crawlerresultarray = $serverresponsearray['result'];
+					$crawlerreviewsarray = $crawlerresultarray['reviews'];
+					
+					foreach ($crawlerreviewsarray as $review) {
+					
+						$tempownerres='';
+						if(isset($review['owner_response']) && $review['owner_response']!=''){
+							$tempownerres = $review['owner_response'];
+						}
+						$templocation ='';
+						if(isset($review['location']) && $review['location']!=''){
+							$templocation = $review['location'];
+						}	
+						$tempmediaurlsarrayjson ='';
+						if(isset($review['mediaurlsarrayjson']) && $review['mediaurlsarrayjson']!=''){
+							$tempmediaurlsarrayjson = $review['mediaurlsarrayjson'];
+						}					
+						/*
+						$reviewsarray[] = [
+						 'reviewer_name' => $review['user_name'],
+						 'reviewer_id' => '',
+						 'reviewer_email' => '',
+						 'userpic' => $review['userimage'],
+						 'rating' => $review['rating'],
+						 'updated' => $review['datesubmitted'],
+						 'review_text' => $review['rtext'],
+						 'review_title' => '',
+						 'from_url' => $listedurl,
+						 'from_url_review' => $review['from_url_review'],
+						 'language_code' => '',
+						 'location' => $templocation,
+						 'recommendation_type' => '',
+						 'company_title' =>  '',
+						 'company_url' => '',
+						 'company_name' => '',
+						 'mediaurlsarrayjson' => $tempmediaurlsarrayjson,
+						 'owner_response' => $tempownerres,
+						 ];
+						 */
+						 $timestamp = strtotime($review['datesubmitted']);
+						 $timestamp = date("Y-m-d H:i:s", $timestamp);
+						 $review_length = str_word_count($review['rtext']);
+						 
+						 $reviewsarray[] = [
+										'reviewer_name' => $review['user_name'],
+										'pagename' => '',
+										'userpic' => $review['userimage'],
+										'rating' => $review['rating'],
+										'created_time' => $timestamp,
+										'created_time_stamp' => strtotime($review['datesubmitted']),
+										'review_text' => trim($review['rtext']),
+										'hide' => '',
+										'review_length' => $review_length,
+										'type' => 'Yelp'
+								];
+						
+						//$x++;
+					}
+						
+					
+					//print_r($serverresponsearray);
+					//die();
+
+					
+						
+					//sleep for random 2 seconds
+					sleep(rand(1,3));
+					$n++;
+					
+					// clean up memory
+					if (!empty($html)) {
+						$html->clear();
+						unset($html);
+					}
+					
+					
+					$x++;
+					
+				}
+				$reviews = array_merge($reviews, $reviewsarray);
+				
+
+
+				// clean up memory
+				if (!empty($html)) {
+					$html->clear();
+					unset($html);
+				}
+				
+				//go ahead and delete first
+				if (is_array($reviews)){
+					if(count((array)$reviews)>0){
+					$wpdb->delete( $table_name, array( 'type' => 'Yelp' ) );
+					}
+				}
+				
+				//add all new yelp reviews to db
+				foreach ( $reviews as $stat ){
+					$insertnum = $wpdb->insert( $table_name, $stat );
+				}
+				//reviews added to db
+				if($insertnum){
+					$errormsg = $errormsg . count($reviews).' Yelp reviews downloaded.';
+					$this->errormsg = $errormsg;
+				} else {
+					$errormsg = $errormsg . ' Error: Unable to find the reviews on this page. Please contact support.';
+					$this->errormsg = $errormsg;
+				}
+				
+				
+			  
+			} else {
+				$errormsg = $errormsg . ' Please enter a valid URL.';
+				$this->errormsg = $errormsg;
+			}
+			/*
+			if($options['yelp_radio']=='no'){
+				$wpdb->delete( $table_name, array( 'type' => 'Yelp' ) );
+				//cancel wp cron job
+			}
+			*/
+			
+	}
+	
+	
+	/**
+	 * download yelp reviews
+	 * @access  public
+	 * @since   1.0.0
+	 * @return  void
+	 */	
+	public function wpyelp_download_yelp_master_OLD($iscron='') {
 	//ini_set('display_errors', 1);
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);	

@@ -16,7 +16,7 @@
  * Plugin Name: 	  WP Yelp Review Slider
  * Plugin URI:        https://wpreviewslider.com/
  * Description:       Allows you to easily display your Yelp Business Page reviews in your Posts, Pages, and Widget areas.
- * Version:           7.9
+ * Version:           8.0
  * Author:            LJ Apps
  * Author URI:        https://wpreviewslider.com/
  * License:           GPL-2.0+
@@ -80,8 +80,8 @@ function run_WP_Yelp_Review()
 }
 
 //for running the cron job
-add_action('wpyelp_daily_event', 'wpyelp_do_this_daily');
-
+//add_action('wpyelp_daily_event', 'wpyelp_do_this_daily');
+/*
 function wpyelp_do_this_daily() {
 
 	require_once plugin_dir_path( __FILE__ ) . 'admin/class-wp-yelp-review-slider-admin.php';
@@ -89,6 +89,7 @@ function wpyelp_do_this_daily() {
 	$plugin_admin->wpyelp_download_yelp_master('cron');
 	
 }
+*/
 //add link to change log on plugins menu
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wprevyelp_action_links' );
 function wprevyelp_action_links( $links )
