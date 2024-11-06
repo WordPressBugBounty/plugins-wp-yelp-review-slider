@@ -80,7 +80,7 @@ class WP_Yelp_Review_Admin {
 		 */
 		//only load for this plugin wp_yelp-settings-pricing
 		if(isset($_GET['page'])){
-			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro"){
+			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro"|| $_GET['page']=="wp_yelp-opt"){
 			wp_enqueue_style( $this->_token, plugin_dir_url( __FILE__ ) . 'css/wpyelp_admin.css', array(), $this->version, 'all' );
 			wp_enqueue_style( $this->_token."_wpyelp_w3", plugin_dir_url( __FILE__ ) . 'css/wpyelp_w3.css', array(), $this->version, 'all' );
 			}
@@ -210,6 +210,13 @@ class WP_Yelp_Review_Admin {
 		$submenu_slug = 'wp_yelp-templates_posts';
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_templates_posts'));
 		
+		// Now add the submenu page for opting in to Brevo
+		$submenu_page_title = 'WP Reviews Pro : Opt';
+		$submenu_title = 'Opt';
+		$submenu_slug = 'wp_yelp-opt';
+		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_opt'));
+		
+		
 		// Now add the submenu page for the reviews templates
 		//$submenu_page_title = 'WP FB Reviews : Upgrade';
 		//$submenu_title = 'Get Pro';
@@ -218,6 +225,12 @@ class WP_Yelp_Review_Admin {
 	
 
 	}
+	
+	public function wp_yelp_opt() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/opt.php';
+	}
+	
+	
 	public function wpse_66040_add_jquery() 
 	{
 		?>
@@ -229,7 +242,12 @@ class WP_Yelp_Review_Admin {
 		<?php
 	}
 	public function wp_yelp_reviews() {
-		require_once plugin_dir_path( __FILE__ ) . '/partials/review_list.php';
+		//if optin isn't set redirect to opt page.
+		if(get_option('wp_yelp_optin',"blank")=="blank"){
+			require_once plugin_dir_path( __FILE__ ) . '/partials/opt.php';
+		} else {
+			require_once plugin_dir_path( __FILE__ ) . '/partials/review_list.php';
+		}
 	}
 	
 	public function wp_yelp_templates_posts() {

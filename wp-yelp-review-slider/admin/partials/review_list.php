@@ -16,6 +16,8 @@
     if (!current_user_can('manage_options')) {
         return;
     }
+	
+	
 	$html="";
 //db function variables
 global $wpdb;
