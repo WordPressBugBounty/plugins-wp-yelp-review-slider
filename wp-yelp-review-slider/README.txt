@@ -3,8 +3,8 @@ Contributors: jgwhite33
 Donate link: http://ljapps.com/
 Tags: Yelp, reviews, slider, testimonials, yelp
 Requires at least: 3.0.1
-Tested up to: 6.6
-Stable tag: 8.1
+Tested up to: 6.7
+Stable tag: 8.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -98,6 +98,9 @@ We are always looking for features to add. Just post on the support forum or con
 5. Create as many templates as you like.
 
 == Changelog ==
+= 8.2 =
+* small bug fix
+
 = 8.1 =
 *optin option
 = 8.0 =

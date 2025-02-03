@@ -516,7 +516,8 @@ class WP_Yelp_Review_Admin {
 		$filtertext = htmlentities($_POST['filtertext']);
 		$filterrating = htmlentities($_POST['filterrating']);
 		$filterrating = intval($filterrating);
-		$curselrevs = $_POST['curselrevs'];
+		//$curselrevs = $_POST['curselrevs'];
+		$curselrevs ="";
 		
 		//perform db search and return results
 		global $wpdb;
