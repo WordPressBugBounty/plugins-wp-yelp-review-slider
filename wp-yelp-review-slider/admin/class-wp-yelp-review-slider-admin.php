@@ -815,7 +815,11 @@ class WP_Yelp_Review_Admin {
 					
 					$args = array(
 						'timeout'     => 120,
-						'sslverify' => false
+						'sslverify' => false,
+				'headers' => array( 
+					'Content-Type' => ' application/json',
+					'Accept'=> 'application/json'
+				)
 					); 
 					$response = wp_remote_get( $tempurlval, $args );
 					if ( is_array( $response ) && ! is_wp_error( $response ) ) {
@@ -832,7 +836,7 @@ class WP_Yelp_Review_Admin {
 					
 					//check for block or timeout
 					//====================
-					if (strpos($serverresponse, "Please wait while your request is being verified") !== false || !isset($serverresponse) || $serverresponse=='') {
+					if (strpos($serverresponse, "Please wait while your request is being verified") !== false || !isset($serverresponse) || $serverresponse=='' || strpos($serverresponse, "Access denied by Imunify360 bot-protection.") !== false) {
 					   //this site is greylisted by imunify360 on cloudways, call backup digital ocean server
 					   $response = wp_remote_get( 'https://ocean.ljapps.com/crawlrevs.php?rip='.$ip_server.'&surl='.$siteurl.'&scrapeurl='.$listedurl.'&stype=yelp&sfp=pro&nobot=1&nhful='.$nhful.'&locationtype=&scrapequery=&tempbusinessname=&pagenum='.$pagenum.'&nextpageurl='.$nextpageurl, array( 'sslverify' => false, 'timeout' => 60 ) );
 						if ( is_array( $response ) && ! is_wp_error( $response ) ) {
