@@ -3,8 +3,8 @@ Contributors: jgwhite33
 Donate link: http://ljapps.com/
 Tags: Yelp, reviews, slider, testimonials, yelp
 Requires at least: 3.0.1
-Tested up to: 6.9
-Stable tag: 8.3
+Tested up to: 7.0
+Stable tag: 8.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -98,6 +98,13 @@ We are always looking for features to add. Just post on the support forum or con
 5. Create as many templates as you like.
 
 == Changelog ==
+= 8.5 =
+* Admin UI updated to match WP TripAdvisor Review Slider layout (Welcome page, W3 tab bar, content panels).
+
+= 8.4 =
+* WordPress 7.0 admin styling updates.
+* Fixed Review List tab re-showing email opt-in after Skip.
+
 = 8.3 =
 * small bug fix
 

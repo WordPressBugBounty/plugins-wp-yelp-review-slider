@@ -238,17 +238,18 @@
 	add_thickbox();
 	
 ?>
-<div id="mythickboxid" style="display:none;">
-     <p>
-         <img src="<?php echo plugin_dir_url( __FILE__ ); ?>pro_settings.png">
-     </p>
-</div>
+<div class="">
+<h1></h1>
+<div class="wrap" id="wp_rev_maindiv">
 
-<div class="wrap wp_yelp-settings">
-	<h1><img src="<?php echo plugin_dir_url( __FILE__ ) . 'logo.png'; ?>"></h1>
+<img class="wprev_headerimg" src="<?php echo plugin_dir_url( __FILE__ ) . 'logo.png?v='.$this->version; ?>">
 <?php 
 include("tabmenu.php");
-?>
+?>	
+<div class="wpfbr_margin10">
+<div class="w3-col welcomediv w3-container w3-white w3-border w3-border-light-gray2 w3-round-small">
+
+
 <div class="wpyelp_margin10">
 	<a id="wpyelp_helpicon_posts" class="wpyelp_btnicononly button dashicons-before dashicons-editor-help"></a>
 	<a id="wpyelp_addnewtemplate" class="button dashicons-before dashicons-plus-alt"><?php _e('Add New Reviews Template', 'wp-fb-reviews'); ?></a>
@@ -592,8 +593,11 @@ echo $dbmsg;
 	<a id="wpyelp_addnewtemplate_cancel" class="button button-secondary"><?php _e('Cancel', 'wp-fb-reviews'); ?></a>
 	</form>
 </div>
-<div class=""><p>Do you like this plugin? If so please take a moment to leave us a review <a href="https://wordpress.org/plugins/wp-yelp-review-slider/" target="blank">here!</a> If it's missing something then please contact us <a href="http://ljapps.com/contact/" target="blank">here</a>. Thanks!</p></div>
-	<div id="popup_review_list" class="popup-wrapper wpyelp_hide">
+<div class=""><p>Do you like this plugin? If so please take a moment to leave me a review <a href="https://wordpress.org/plugins/wp-yelp-review-slider/" target="blank">here!</a> If it's missing something then please contact me <a href="https://wpreviewslider.com/contact/" target="blank">here</a>. Thanks!</p></div>
+
+</div></div></div>
+	
+<div id="popup_review_list" class="popup-wrapper wpyelp_hide">
 	  <div class="popup-content">
 		<div class="popup-title">
 		  <button type="button" class="popup-close">&times;</button>
@@ -605,4 +609,10 @@ echo $dbmsg;
 		</div>
 	  </div>
 	</div>
+</div>
+
+<div id="mythickboxid" style="display:none;">
+     <p>
+         <img src="<?php echo plugin_dir_url( __FILE__ ); ?>pro_settings.png">
+     </p>
 </div>

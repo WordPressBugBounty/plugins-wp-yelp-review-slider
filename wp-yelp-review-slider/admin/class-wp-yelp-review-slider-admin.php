@@ -78,15 +78,20 @@ class WP_Yelp_Review_Admin {
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
-		//only load for this plugin wp_yelp-settings-pricing
+		//only load for this plugin admin pages
 		if(isset($_GET['page'])){
-			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro"|| $_GET['page']=="wp_yelp-opt"){
+			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro" || $_GET['page']=="wp_yelp-opt" || $_GET['page']=="wp_yelp-welcome"){
+
+			wp_register_style( 'Font_Awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css' );
+			wp_enqueue_style('Font_Awesome');
+				
+			wp_enqueue_style( $this->_token."_wprev_w3", plugin_dir_url( __FILE__ ) . 'css/wprev_w3.css', array(), $this->version, 'all' );
+
 			wp_enqueue_style( $this->_token, plugin_dir_url( __FILE__ ) . 'css/wpyelp_admin.css', array(), $this->version, 'all' );
 			wp_enqueue_style( $this->_token."_wpyelp_w3", plugin_dir_url( __FILE__ ) . 'css/wpyelp_w3.css', array(), $this->version, 'all' );
 			}
-			//load template styles for wp_yelp-templates_posts page
-			if($_GET['page']=="wp_yelp-templates_posts"|| $_GET['page']=="wp_yelp-get_pro"){
-				//enque template styles for preview
+			//load template styles for preview
+			if($_GET['page']=="wp_yelp-templates_posts"|| $_GET['page']=="wp_yelp-get_pro" || $_GET['page']=="wp_yelp-welcome"){
 				wp_enqueue_style( $this->_token."_style1", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template1.css', array(), $this->version, 'all' );
 			}
 		}
@@ -115,7 +120,7 @@ class WP_Yelp_Review_Admin {
 
 		//scripts for all pages in this plugin
 		if(isset($_GET['page'])){
-			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro"){
+			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro" || $_GET['page']=="wp_yelp-welcome"){
 				//pop-up script
 				wp_register_script( 'simple-popup-js',  plugin_dir_url( __FILE__ ) . 'js/wpyelp_simple-popup.min.js' , '', $this->version, false );
 				wp_enqueue_script( 'simple-popup-js' );
@@ -175,46 +180,36 @@ class WP_Yelp_Review_Admin {
 		 * adds the menu pages to wordpress
 		 */
 
-		$page_title = 'WP Yelp Reviews : Reviews List';
+		$page_title = 'WP Yelp Reviews : Welcome';
 		$menu_title = 'WP Yelp Reviews';
 		$capability = 'manage_options';
-		$menu_slug = 'wp_yelp-reviews';
+		$menu_slug = 'wp_yelp-welcome';
 		
-		// Now add the submenu page for the actual reviews list
-		$submenu_page_title = 'WP Reviews Pro : Reviews List';
+		add_menu_page($page_title, $menu_title, $capability, $menu_slug, array($this,'wp_yelp_welcome'),'dashicons-star-half');
+		
+		$sub_menu_title = 'Welcome';
+		add_submenu_page($menu_slug, $page_title, $sub_menu_title, $capability, $menu_slug, array($this,'wp_yelp_welcome'));
+		
+		$submenu_page_title = 'WP Yelp Reviews : Reviews List';
 		$submenu_title = 'Review List';
 		$submenu_slug = 'wp_yelp-reviews';
-		
-		add_menu_page($page_title, $menu_title, $capability, $menu_slug, array($this,'wp_yelp_reviews'),'dashicons-star-half');
-		
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_reviews'));
 		
-		
-		//add_menu_page($page_title, $menu_title, $capability, $menu_slug, array($this,'wp_yelp_settings'),'dashicons-star-half');
-		
-		// We add this submenu page with the same slug as the parent to ensure we don't get duplicates
-		//$sub_menu_title = 'Get FB Reviews';
-		//add_submenu_page($menu_slug, $page_title, $sub_menu_title, $capability, $menu_slug, array($this,'wp_yelp_settings'));
-		
-		// Now add the submenu page for yelp
-		$submenu_page_title = 'WP Reviews Pro : Yelp';
+		$submenu_page_title = 'WP Yelp Reviews : Yelp';
 		$submenu_title = 'Get Yelp Reviews';
 		$submenu_slug = 'wp_yelp-get_yelp';
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_getyelp'));
-		
 
-		
-		// Now add the submenu page for the reviews templates
-		$submenu_page_title = 'WP Reviews Pro : Templates';
+		$submenu_page_title = 'WP Yelp Reviews : Templates';
 		$submenu_title = 'Templates';
 		$submenu_slug = 'wp_yelp-templates_posts';
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_templates_posts'));
 		
-		// Now add the submenu page for opting in to Brevo
-		$submenu_page_title = 'WP Reviews Pro : Opt';
+		// Opt-in page (hidden from menu; reachable via direct URL)
+		$submenu_page_title = 'WP Yelp Reviews : Opt';
 		$submenu_title = 'Opt';
 		$submenu_slug = 'wp_yelp-opt';
-		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_opt'));
+		add_submenu_page(null, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_opt'));
 		
 		
 		// Now add the submenu page for the reviews templates
@@ -229,6 +224,10 @@ class WP_Yelp_Review_Admin {
 	public function wp_yelp_opt() {
 		require_once plugin_dir_path( __FILE__ ) . '/partials/opt.php';
 	}
+
+	public function wp_yelp_welcome() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/welcome.php';
+	}
 	
 	
 	public function wpse_66040_add_jquery() 
@@ -242,12 +241,7 @@ class WP_Yelp_Review_Admin {
 		<?php
 	}
 	public function wp_yelp_reviews() {
-		//if optin isn't set redirect to opt page.
-		if(get_option('wp_yelp_optin',"blank")=="blank"){
-			require_once plugin_dir_path( __FILE__ ) . '/partials/opt.php';
-		} else {
-			require_once plugin_dir_path( __FILE__ ) . '/partials/review_list.php';
-		}
+		require_once plugin_dir_path( __FILE__ ) . '/partials/review_list.php';
 	}
 	
 	public function wp_yelp_templates_posts() {
@@ -1697,11 +1691,12 @@ class WP_Yelp_Review_Admin {
 	public function wprev_yelp_add_external_link_admin_submenu() {
 		global $submenu;
 
-		$menu_slug = 'wp_yelp-reviews'; // used as "key" in menus
-		$menu_pos = 1; // whatever position you want your menu to appear
+		$menu_slug = 'wp_yelp-welcome'; // used as "key" in menus
 
+		if (array_key_exists($menu_slug, $submenu)) {
 		// add the external links to the slug you used when adding the top level menu
-		$submenu[$menu_slug][] = array('<div id="wprev-660233">Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/');
+		$submenu[$menu_slug][] = array('<div id="wprev-66040">Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/');
+		}
 	}
     
 

@@ -20,10 +20,17 @@
 	$current_user = wp_get_current_user();
 	$pluginname = "WP Yelp Reviews";
 	$logo = plugin_dir_url( __FILE__ ) . 'logo.png';
-	$skippage = "wp_yelp-get_yelp";
+	$skippage = "wp_yelp-welcome";
 	$optname = "wp_yelp_optin";
 	$brevolistid = 14;
 	$choicemade = false;
+
+	if ( isset( $_GET['wpyelp_skip'] ) && '1' === $_GET['wpyelp_skip'] ) {
+		check_admin_referer( 'wpyelp_skip_optin' );
+		update_option( 'wp_yelp_optin', 'skipped' );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . $skippage ) );
+		exit;
+	}
 	
 	if (isset($_POST['wprevpro_submitoptform'])){
 
@@ -144,10 +151,13 @@
 	
 	//echo get_option('wp_yelp_optin',"no");
 ?>
+<div class="">
 <h1></h1>
-<div class="wrap wp_yelp-settings">
+<div class="wrap" id="wp_rev_maindiv">
 
-<div id="fs_connect" class="wrap fs-anonymous-disabled require-license-key">
+<img class="wprev_headerimg" src="<?php echo plugin_dir_url( __FILE__ ) . 'logo.png'; ?>">
+
+<div id="fs_connect" class="fs-anonymous-disabled require-license-key">
         <div class="fs-header">
             <!--			<b class="fs-site-icon"><i class="dashicons dashicons-wordpress-alt"></i></b>-->
             <div class="fs-plugin-icon">
@@ -168,7 +178,7 @@
 		<input style="<?php if(get_option('wp_yelp_optin',"no")!="yes"){echo "display:none;";}?>" type="submit" name="wprevpro_submitoptformoptout" id="wprevpro_submitoptformoptout" class="button button-primary allowbutton" tabindex="1" value="Opt Out">
 
 
-		<a href="?page=<?php echo $skippage;?>" class="button button skipbutton" tabindex="1" type="submit">Skip</a>
+		<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp_yelp-opt&wpyelp_skip=1' ), 'wpyelp_skip_optin' ) ); ?>" class="button button skipbutton" tabindex="1">Skip</a>
 		
 		</div>
 			<?php 
@@ -186,7 +196,7 @@
 
 		<div class='optbuttons'>
 		
-		<a href="?page=<?php echo $skippage;?>" class="button button skipbutton" tabindex="1" type="submit">Continue</a>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $skippage ) ); ?>" class="button button skipbutton" tabindex="1">Continue</a>
 		
 		</div>
 
@@ -204,9 +214,6 @@
 <?php 
 
 ?>
-<div class="wpfbr_margin10">
-
-</div>
 
 </div>
 

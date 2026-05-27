@@ -25,11 +25,18 @@ $table_name = $wpdb->prefix . 'wpyelp_reviews';
 $rowsperpage = 20;
 $nonce = wp_create_nonce( 'my-nonce' );
 ?>
-<div class="wrap wp_yelp-settings">
-	<h1><img src="<?php echo plugin_dir_url( __FILE__ ) . 'logo.png'; ?>"></h1>
+<div class="">
+<h1></h1>
+<div class="wrap" id="wp_rev_maindiv">
+
+<img class="wprev_headerimg" src="<?php echo plugin_dir_url( __FILE__ ) . 'logo.png?v='.$this->version; ?>">
 <?php 
 include("tabmenu.php");
-?>
+?>	
+<div class="wpfbr_margin10">
+<div class="w3-col welcomediv w3-container w3-white w3-border w3-border-light-gray2 w3-round-small">
+
+
 <div class="wpyelp_margin10">
 	<a id="wpyelp_helpicon" class="wpyelp_btnicononly button dashicons-before dashicons-editor-help"></a>
 	<a id="wpyelp_removeallbtn" data-sec="<?php echo esc_attr( $nonce ); ?>" class="button dashicons-before dashicons-no"><?php _e('Remove All Reviews', 'wp-yelp-reviews'); ?></a>
@@ -197,6 +204,10 @@ _e('Search reviews, hide certain reviews, manually add reviews, save a CSV file 
  
  echo $html;
 ?>
+</div></div></div>
+
+
+
 	<div id="popup_review_list" class="popup-wrapper wpyelp_hide">
 	  <div class="popup-content">
 		<div class="popup-title">

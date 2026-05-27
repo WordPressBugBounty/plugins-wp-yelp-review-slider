@@ -6,12 +6,32 @@
     display: none;
 }
 
+.welcomediv {
+    padding-left: 15px;
+	padding-right: 10px;
+	position: relative;
+	min-height: 100%;
+}
+#reviewdiv p {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+a#provimg {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}
+.welcomecontainer {
+    display: flex;
+    align-items: stretch;
+}
+
  div.wp_yelp-settings {
     width: 95%;
     background-color: white;
     border-style: solid;
     border-color: #E6E6E6;
-    border-width: 15px;
+    border-width: 1px;
     padding: 10px;
 	margin: 10px 0px 0 -10px;
 }
@@ -80,7 +100,7 @@ div#setting-error-settings_updated {
 
 .popup-title {
   padding: 10px 15px;
-  background-color: #0073aa;
+  background-color: #125E96;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -93,6 +113,9 @@ div#setting-error-settings_updated {
 .popup-body {
   padding: 10px 15px;
   color: #555;
+}
+.popup-body p {
+    font-size: 15px;
 }
 
 .popup-close {
@@ -118,15 +141,18 @@ div#setting-error-settings_updated {
     margin-bottom: 10px;
 }
 .wpyelp_btnicononly {
-    padding-left: 4px !important;
-	padding-right: 3px !important;
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    padding: 0 !important;
 }
 .dashicons-before::before {
-    padding-top: 3px;
+    padding-top: 0;
     padding-right: 2px;
 }
 #wpyelp_review_list_pagination_bar {
     margin-top: 10px;
+	margin-bottom: 10px;
 }
 .button.blue_grey {
     background: #cccccc;
@@ -232,6 +258,170 @@ input#yelp_business_url {
 #packages ul>li article {
     float: none;
     width: 100%;
+}
+
+/* WP 7 admin styling */
+#wpyelp_new_template input[type="text"],
+#wpyelp_new_template input[type="number"],
+#wpyelp_new_template select {
+    height: 32px;
+    min-height: 32px;
+    box-sizing: border-box;
+    line-height: 1.4;
+}
+#wpyelp_new_template select {
+    padding: 0 24px 0 8px;
+}
+#wpyelp_new_template .wp-picker-container .wp-color-result.button {
+    height: 32px;
+    min-height: 32px;
+    box-sizing: border-box;
+}
+#wpyelp_new_template table.form-table > tbody > tr.wpyelp_row:first-child th,
+#wpyelp_new_template table.form-table > tbody > tr.wpyelp_row:first-child td {
+    vertical-align: middle;
+}
+#wpyelp_new_template table.form-table > tbody > tr.wpyelp_row:first-child th {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    white-space: nowrap;
+}
+#wpyelp_new_template #wpyelp_template_title {
+    margin: 0;
+    vertical-align: middle;
+}
+#wp_rev_maindiv input[type="text"],
+#wp_rev_maindiv input[type="number"],
+#wp_rev_maindiv select,
+.wrap.wp_yelp-settings input[type="text"],
+.wrap.wp_yelp-settings input[type="number"],
+.wrap.wp_yelp-settings select {
+    height: 32px;
+    min-height: 32px;
+    box-sizing: border-box;
+    line-height: 1.4;
+}
+#wp_rev_maindiv select,
+.wrap.wp_yelp-settings select {
+    padding: 0 24px 0 8px;
+}
+#wp_rev_maindiv .button,
+#wp_rev_maindiv .button-secondary,
+#wp_rev_maindiv a.button,
+#wp_rev_maindiv input.button,
+.wrap.wp_yelp-settings .button,
+.wrap.wp_yelp-settings .button-secondary,
+.wrap.wp_yelp-settings a.button,
+.wrap.wp_yelp-settings input.button {
+    border-color: #ccc;
+    background: #f6f7f7;
+    color: #505050;
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    padding-top: 0;
+    padding-bottom: 0;
+    box-sizing: border-box;
+    line-height: 1;
+}
+#wp_rev_maindiv img.wprev_headerimg {
+    width: 148px;
+    max-width: 50%;
+    height: auto;
+    margin-bottom: 10px;
+}
+#wp_rev_maindiv form p.description,
+#newtemplateform p.description,
+.wrap.wp_yelp-settings form p.description {
+    font-size: 14px;
+    margin: .4em 0;
+}
+#wp_rev_maindiv #newtemplateform input[type="submit"].button,
+#wp_rev_maindiv #newtemplateform a.button,
+#wp_rev_maindiv #wpyelp_submittemplatebtn,
+#wp_rev_maindiv #wpyelp_addnewtemplate_cancel,
+.wrap.wp_yelp-settings #newtemplateform input[type="submit"].button,
+.wrap.wp_yelp-settings #newtemplateform a.button,
+.wrap.wp_yelp-settings #wpyelp_submittemplatebtn,
+.wrap.wp_yelp-settings #wpyelp_addnewtemplate_cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    padding: 0 12px;
+    margin: 0 6px 0 0;
+    box-sizing: border-box;
+    line-height: 1;
+    vertical-align: middle;
+    -webkit-appearance: none;
+    appearance: none;
+}
+#wp_rev_maindiv #newtemplateform input[type="submit"].button-primary,
+#wp_rev_maindiv #wpyelp_submittemplatebtn,
+.wrap.wp_yelp-settings #newtemplateform input[type="submit"].button-primary,
+.wrap.wp_yelp-settings #wpyelp_submittemplatebtn {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+
+/* WP 7 admin: center dashicons in buttons */
+#wp_rev_maindiv .button.dashicons-before,
+#wp_rev_maindiv a.button.dashicons-before,
+#wp_rev_maindiv .button.dashicons-after,
+#wp_rev_maindiv a.button.dashicons-after,
+.wrap.wp_yelp-settings .button.dashicons-before,
+.wrap.wp_yelp-settings a.button.dashicons-before {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    line-height: 1.2;
+}
+#wp_rev_maindiv .button.dashicons-before::before,
+#wp_rev_maindiv a.button.dashicons-before::before,
+.wrap.wp_yelp-settings .button.dashicons-before::before,
+.wrap.wp_yelp-settings a.button.dashicons-before::before {
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    vertical-align: middle;
+    position: relative;
+    top: auto;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+#wp_rev_maindiv .button.dashicons-after::after,
+#wp_rev_maindiv a.button.dashicons-after::after {
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    vertical-align: middle;
+    position: relative;
+    top: auto;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+#wp_rev_maindiv .wpyelp_btnicononly.button.dashicons-before,
+.wrap.wp_yelp-settings .wpyelp_btnicononly.button.dashicons-before {
+    padding: 0 !important;
+}
+#wp_rev_maindiv .wpyelp_margin10:has(> .button),
+#wp_rev_maindiv .wpyelp_margin10:has(> a.button),
+#wp_rev_maindiv .wpfbr_margin10:has(> .button),
+#wp_rev_maindiv .wpfbr_margin10:has(> a.button),
+.wrap.wp_yelp-settings .wpyelp_margin10:has(> .button),
+.wrap.wp_yelp-settings .wpyelp_margin10:has(> a.button) {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 
