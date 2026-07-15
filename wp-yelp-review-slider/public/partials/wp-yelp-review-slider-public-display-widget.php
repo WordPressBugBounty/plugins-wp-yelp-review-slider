@@ -87,24 +87,29 @@
 				$rtypefilter = $rtypefilter.")";
 			}
 		}
-		//rpage filter-----
-		$rpagefilter = "";
-		if($currentform[0]->rpage!=""){
-			$rpagearray = json_decode($currentform[0]->rpage);
-			if(is_array($rpagearray)){
-			$rpagearray = array_filter($rpagearray);
-			$rpagearray = array_values($rpagearray);
-			if(count($rpagearray)>0){
-				for ($x = 0; $x < count($rpagearray); $x++) {
-					
-					if($x==0){
-						$rpagefilter = "AND (pageid = '".$rpagearray[$x]."'";
-					} else {
-						$rpagefilter = $rpagefilter." OR pageid = '".$rpagearray[$x]."'";
-					}
-				}
-				$rpagefilter = $rpagefilter.")";
+		//source (rpage) filter — single pageid, safely bound via $wpdb->prepare below.
+		//Backward compatible: legacy JSON-array values use the first pageid, and an
+		//empty value falls back to the last-added source (or the newest review).
+		$filtersource = isset($currentform[0]->rpage) ? trim($currentform[0]->rpage) : "";
+		if($filtersource!=""){
+			$decodedsource = json_decode($filtersource, true);
+			if(is_array($decodedsource)){
+				$decodedsource = array_values(array_filter($decodedsource));
+				$filtersource = isset($decodedsource[0]) ? $decodedsource[0] : "";
 			}
+		}
+		if($filtersource==""){
+			$crawlsraw = get_option('wprev_yelp_crawls');
+			$crawls = $crawlsraw ? json_decode($crawlsraw, true) : array();
+			if(is_array($crawls) && count($crawls)>0){
+				$crawlkeys = array_keys($crawls);
+				$filtersource = (string) end($crawlkeys);
+			}
+			if($filtersource==""){
+				$newestpageid = $wpdb->get_var("SELECT pageid FROM ".$table_name." WHERE pageid != '' ORDER BY created_time_stamp DESC LIMIT 1");
+				if($newestpageid){
+					$filtersource = $newestpageid;
+				}
 			}
 		}
 
@@ -118,8 +123,22 @@
 				$onlyselected = true;
 			}
 		}
+
+		// Decode template misc early for badge + style settings.
+		$template_misc_array = json_decode($currentform[0]->template_misc, true);
+		if(!is_array($template_misc_array)){
+			$template_misc_array = array();
+		}
+		if(!isset($template_misc_array['bhreviews'])){
+			$template_misc_array['bhreviews']='';
+		}
+		if(!isset($template_misc_array['blocation'])){
+			$template_misc_array['blocation']='';
+		}
 		
-		if($onlyselected){
+		if($template_misc_array['bhreviews']=="yes"){
+			$totalreviews = array();
+		} elseif($onlyselected){
 			$query = "SELECT * FROM ".$table_name." WHERE id IN (";
 			//loop array and add to query
 			$n=1;
@@ -136,41 +155,44 @@
 			$query = $query.")";
 			$totalreviews = $wpdb->get_results($query);
 		} else {
+			$sourcefilter = "";
+			$prepareargs = array( "0", $min_words, $max_words, $min_rating, "yes" );
+			if($filtersource!=""){
+				$sourcefilter = " AND pageid = %s";
+				$prepareargs[] = $filtersource;
+			}
 			$totalreviews = $wpdb->get_results(
 				$wpdb->prepare("SELECT * FROM ".$table_name."
-				WHERE id>%d AND review_length >= %d AND review_length <= %d AND rating >= %d AND hide != %s ".$rtypefilter." ".$rpagefilter."
+				WHERE id>%d AND review_length >= %d AND review_length <= %d AND rating >= %d AND hide != %s ".$rtypefilter.$sourcefilter."
 				ORDER BY ".$sorttable." ".$sortdir." 
-				LIMIT ".$tablelimit." ", "0","$min_words","$max_words","$min_rating","yes")
+				LIMIT ".$tablelimit." ", $prepareargs)
 			);
 		}
-		//echo $wpdb->last_query ;
-		
-			//print_r($totalreviews);
-			//echo "<br><br>";
-			
-	//only continue if some reviews found
-	$makingslideshow=false;
-	if(count($totalreviews)>0){
 
-		//if creating a slider than we need to split into chunks for each slider
-		//if($currentform[0]->createslider == "yes"){
-			//print_r(array_chunk($totalreviews, $reviewsperpage));
+		// Open badge wrapper (left / above) before reviews.
+		$wpyelp_badge_phase = 'open';
+		$badgehtml = '';
+		include plugin_dir_path( __FILE__ ) . 'wpyelp_badge_render.php';
+			
+	// Continue if some reviews found OR badge-only mode is active.
+	$makingslideshow=false;
+	$has_reviews = ( is_array( $totalreviews ) && count( $totalreviews ) > 0 );
+	if($has_reviews || ( isset( $wprev_badge_active ) && $wprev_badge_active )){
+
+	if($has_reviews){
+
 			$totalreviewschunked = array_chunk($totalreviews, $reviewsperpage);
-		//}
-		//loop through each chunk
-		//print_r($totalreviewschunked);
 		
 		//if making slide show then add it here
 		if($currentform[0]->createslider == "yes"){
 			//make sure we have enough to create a show here
-			if($totalreviews>$reviewsperpage){
+			if(count($totalreviews)>$reviewsperpage){
 				$makingslideshow = true;
 				echo '<div class="wprev-slider-widget" id="wprev-widget-'.$currentform[0]->id.'"><ul>';
 			}
 		}
 		
 		foreach ( $totalreviewschunked as $reviewschunked ){
-			//echo "loop1";
 			$totalreviewstemp = $reviewschunked;
 			
 			//need to break $totalreviewstemp up based on how many rows, create an multi array containing them
@@ -179,8 +201,6 @@
 				for ($row = 0; $row < $currentform[0]->display_num_rows; $row++) {
 					$n=1;
 					foreach ( $totalreviewstemp as $tempreview ){
-						//echo "<br>".$tempreview->reviewer_name;
-						//echo $n."-".$row."-".$currentform[0]->display_num;
 						if($n>($row*$currentform[0]->display_num) && $n<=(($row+1)*$currentform[0]->display_num)){
 							$rowarray[$row][$n]=$tempreview;
 						}
@@ -193,14 +213,13 @@
 			}
 			
 			//add styles from template misc here
-			$template_misc_array = json_decode($currentform[0]->template_misc, true);
 			if(is_array($template_misc_array)){
 				$misc_style ="";
 				//hide stars and/or date
-				if($template_misc_array['showstars']=="no"){
+				if(isset($template_misc_array['showstars']) && $template_misc_array['showstars']=="no"){
 					$misc_style = $misc_style . '.wpyelp_star_imgs_T'.$currentform[0]->style.'_widget {display: none;}';
 				}
-				if($template_misc_array['showdate']=="no"){
+				if(isset($template_misc_array['showdate']) && $template_misc_array['showdate']=="no"){
 					$misc_style = $misc_style . '.wprev_showdate_T'.$currentform[0]->style.'_widget {display: none;}';
 				}
 				
@@ -209,6 +228,17 @@
 				$misc_style = $misc_style . '.wprev_preview_bg2_T'.$currentform[0]->style.'_widget {background:'.$template_misc_array['bgcolor2'].';}';
 				$misc_style = $misc_style . '.wprev_preview_tcolor1_T'.$currentform[0]->style.'_widget {color:'.$template_misc_array['tcolor1'].';}';
 				$misc_style = $misc_style . '.wprev_preview_tcolor2_T'.$currentform[0]->style.'_widget {color:'.$template_misc_array['tcolor2'].';}';
+				//font sizes (Review Font Size / Name-Date Font Size)
+				if(isset($template_misc_array['tfont1']) && $template_misc_array['tfont1']!==''){
+					$misc_style = $misc_style . '.wprev_preview_tcolor1_T'.$currentform[0]->style.'_widget {font-size:'.intval($template_misc_array['tfont1']).'px;}';
+				}
+				if(isset($template_misc_array['tfont2']) && $template_misc_array['tfont2']!==''){
+					$misc_style = $misc_style . '.wprev_preview_tcolor2_T'.$currentform[0]->style.'_widget {font-size:'.intval($template_misc_array['tfont2']).'px;}';
+				}
+				//read more link color
+				if(isset($template_misc_array['read_more_color']) && $template_misc_array['read_more_color']!==''){
+					$misc_style = $misc_style . '.wprev-slider-widget .wprs_rd_more {color:'.$template_misc_array['read_more_color'].';}';
+				}
 				//style specific mods
 				if($currentform[0]->style=="1"){
 					$misc_style = $misc_style . '.wprev_preview_bg1_T'.$currentform[0]->style.'_widget::after{ border-top: 30px solid '.$template_misc_array['bgcolor1'].'; }';
@@ -248,7 +278,6 @@
 		}	//end loop chunks
 		//if making slide show then end it
 		if($makingslideshow){
-			//grab db values
 			if($currentform[0]->sliderautoplay!="" && $currentform[0]->sliderautoplay=='yes'){
 				$autoplay = 'true';
 			} else {
@@ -274,11 +303,7 @@
 			} else {
 				$delay = "3000";
 			}
-			//if($currentform[0]->sliderheight=='no'){
-			//	$animateHeight = 'false';
-			//} else {
 				$animateHeight = 'true';
-			//}
 		
 				echo '</ul></div>';
 				echo "<script type='text/javascript' defer>
@@ -296,6 +321,14 @@
 							".$slidedots."
 						});
 						</script>";
+		}
+
+	} // end has_reviews
+
+		// Close badge wrapper (right side + outer div).
+		if ( isset( $wprev_badge_active ) && $wprev_badge_active ) {
+			$wpyelp_badge_phase = 'close';
+			include plugin_dir_path( __FILE__ ) . 'wpyelp_badge_render.php';
 		}
 	 
 	}

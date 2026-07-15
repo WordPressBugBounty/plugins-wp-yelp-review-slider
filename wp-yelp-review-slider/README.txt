@@ -4,7 +4,7 @@ Donate link: http://ljapps.com/
 Tags: Yelp, reviews, slider, testimonials, yelp
 Requires at least: 3.0.1
 Tested up to: 7.0
-Stable tag: 8.5
+Stable tag: 9.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,16 +28,23 @@ If you don't have any Yelp reviews, then don't worry it's pretty easy to get sta
 Feature List:
 
 * Easily create a slider from your Yelp reviews! Sort of like an image slider but with Yelp reviews!
+* Add more than one Yelp business page and download reviews for each source separately.
 * Filter reviews by rating to only show your best reviews!
 * Simple to enter the Yelp URL and click the download button to copy your reviews to your database.
 * You can create multiple templates to use all of over your site. They can be used in Posts, Pages, and Widgets!
+* Choose which Yelp business page each template shows reviews from.
+* Two review layouts to choose from: the classic slider style and a modern card style (Style 6).
+* Show review photos in a clickable lightbox pop-up.
 * They can also be added with a template function.
+* Manage your reviews in an easy list: hide/show, edit the reviewer photo and date, or delete reviews.
 * Control what reviews get displayed on which slider with options such as: show/hide star rating, show/hide date, change the border radius, modify the colors and background.
 * Create a grid of reviews buy changing how many to show per a row and even have mutliple rows of reviews!
 * Even more control of the display by using the custom CSS input box.
 * Display them by newest or randomly.
 * Even hide the no text reviews completely with the click of a button.
 * Add a read more link and even change the text of it.
+* Place a summary badge (rating, review count, and Review us button) next to your reviews.
+* Tabbed template settings for Style, General, Filter, and Badge options.
 
 Check out our other free versions!
 [Facebook](https://wordpress.org/plugins/wp-facebook-reviews/)
@@ -98,6 +105,23 @@ We are always looking for features to add. Just post on the support forum or con
 5. Create as many templates as you like.
 
 == Changelog ==
+= 9.0 =
+* New: Add multiple Yelp business pages and download reviews for each source separately.
+* New: Choose which Yelp business page each review template displays reviews from.
+* New: Modern card review layout (Style 6) in addition to the classic style.
+* New: Show review photos in a clickable lightbox pop-up.
+* New: Reviews List now lets you hide/show, edit the reviewer photo and date, or delete reviews inline (no page reload).
+* New: Review Template editor now has a live preview, Slider/Grid settings (slide speed, autoplay, dots, arrows, static height), Read More links, and Reviews Same Height, matching the Pro editor experience.
+* New: Verified badge, last name display (show/hide/initial), avatar options (show/hide/mystery/initial), and site icon display are all now configurable per template.
+* New: Badge Settings tab lets you place a Yelp rating badge (location, name, business image, colors, border, and text overrides) next to your reviews.
+* Improved: Reworked review download that pages through Yelp to collect more reviews per source.
+* Improved: Hardened review queries and sanitized crawled data before saving.
+* Improved: Template editor help text is now tucked behind a "?" icon next to each setting, and slider settings are grouped on a single row, to match the Pro editor layout.
+* Fix: Edit button on the Reviews List page could silently fail to open depending on script load order.
+* Fix: Review photos in the Template editor's live preview now open correctly in the lightbox pop-up.
+* Fix: Admin buttons (Upload, Save Review, Cancel, etc.) no longer show their label text riding too high in the button.
+* Fix: Updated the Yelp crawler to match Yelp's current review photo markup so review photos keep downloading correctly.
+
 = 8.5 =
 * Admin UI updated to match WP TripAdvisor Review Slider layout (Welcome page, W3 tab bar, content panels).
 

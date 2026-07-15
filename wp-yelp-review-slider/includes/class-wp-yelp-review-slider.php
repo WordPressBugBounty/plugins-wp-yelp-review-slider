@@ -70,7 +70,7 @@ class WP_Yelp_Review {
 	public function __construct() {
 
 		$this->_token = 'wp-yelp-review-slider';
-		$this->version = '8.5';
+		$this->version = '9.0';
 		//using this for development
 		//$this->version = time();
 
@@ -220,7 +220,29 @@ class WP_Yelp_Review {
 			) $charset_collate;";
 		
 		dbDelta( $sql_template );
-			
+
+		//create totals/averages table used for badge averages
+		$table_name_totalavg = $wpdb->prefix . 'wpyelp_total_averages';
+		$sql_totalavg = "CREATE TABLE $table_name_totalavg (
+				btp_id varchar(150) DEFAULT '' NOT NULL,
+				btp_name varchar(150) DEFAULT '' NOT NULL,
+				btp_type varchar(10) DEFAULT '' NOT NULL,
+				pagetype varchar(100) DEFAULT '' NOT NULL,
+				pagetypedetails text NOT NULL,
+				total_indb varchar(10) DEFAULT '' NOT NULL,
+				total varchar(10) DEFAULT '' NOT NULL,
+				avg_indb varchar(10) DEFAULT '' NOT NULL,
+				avg varchar(10) DEFAULT '' NOT NULL,
+				numr1 varchar(10) DEFAULT '' NOT NULL,
+				numr2 varchar(10) DEFAULT '' NOT NULL,
+				numr3 varchar(10) DEFAULT '' NOT NULL,
+				numr4 varchar(10) DEFAULT '' NOT NULL,
+				numr5 varchar(10) DEFAULT '' NOT NULL,
+				UNIQUE KEY id (btp_id),
+				PRIMARY KEY (btp_id)
+			) $charset_collate;";
+		dbDelta( $sql_totalavg );
+
 		}
 		
 		update_option( $this->_token . '_current_db_version', $this->version );
@@ -269,6 +291,11 @@ class WP_Yelp_Review {
 		 * of the plugin.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-yelp-review-slider-i18n.php';
+
+		/**
+		 * Shared CSS / color sanitization helpers (badge + template colors).
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-yelp-review-slider-sanitize.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the admin area.
@@ -351,6 +378,17 @@ class WP_Yelp_Review {
 
 		//add ajax for hiding and deleting reviews in table
 		$this->loader->add_action( 'wp_ajax_yelp_find_reviews', $plugin_admin, 'wpyelp_getreviews_ajax' ); 		
+
+		//add ajax for adding a Yelp source and downloading its reviews
+		$this->loader->add_action( 'wp_ajax_wpyelp_add_source', $plugin_admin, 'wpyelp_ajax_add_source' );
+		$this->loader->add_action( 'wp_ajax_wpyelp_download_source', $plugin_admin, 'wpyelp_ajax_download_source' );
+
+		//add ajax for saving an edited review
+		$this->loader->add_action( 'wp_ajax_wpyelp_save_review', $plugin_admin, 'wpyelp_savereview_ajax' );
+
+		//add ajax for saving a template and rendering a live preview
+		$this->loader->add_action( 'wp_ajax_wpyelp_save_template', $plugin_admin, 'wpyelp_savetemplate_ajax' );
+		$this->loader->add_action( 'wp_ajax_wpyelp_get_preview', $plugin_admin, 'wpyelp_previewtemplate_ajax' );
 		
 
 		//add download csv file function wpyelp_download_csv

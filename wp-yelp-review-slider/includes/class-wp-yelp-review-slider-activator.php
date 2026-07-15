@@ -176,6 +176,28 @@ class WP_Yelp_Review_Activator {
 			) $charset_collate;";
 		
 		dbDelta( $sql_template );
+
+		//create totals/averages table used for badge averages
+		$table_name_totalavg = $wpdb->prefix . 'wpyelp_total_averages';
+		$sql_totalavg = "CREATE TABLE $table_name_totalavg (
+				btp_id varchar(150) DEFAULT '' NOT NULL,
+				btp_name varchar(150) DEFAULT '' NOT NULL,
+				btp_type varchar(10) DEFAULT '' NOT NULL,
+				pagetype varchar(100) DEFAULT '' NOT NULL,
+				pagetypedetails text NOT NULL,
+				total_indb varchar(10) DEFAULT '' NOT NULL,
+				total varchar(10) DEFAULT '' NOT NULL,
+				avg_indb varchar(10) DEFAULT '' NOT NULL,
+				avg varchar(10) DEFAULT '' NOT NULL,
+				numr1 varchar(10) DEFAULT '' NOT NULL,
+				numr2 varchar(10) DEFAULT '' NOT NULL,
+				numr3 varchar(10) DEFAULT '' NOT NULL,
+				numr4 varchar(10) DEFAULT '' NOT NULL,
+				numr5 varchar(10) DEFAULT '' NOT NULL,
+				UNIQUE KEY id (btp_id),
+				PRIMARY KEY (btp_id)
+			) $charset_collate;";
+		dbDelta( $sql_totalavg );
 	
 		//add columns to table, just need to update the dbDelta function above, will modify to match.
 		

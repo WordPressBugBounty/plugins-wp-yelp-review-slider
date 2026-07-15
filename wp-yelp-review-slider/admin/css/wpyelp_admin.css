@@ -133,7 +133,52 @@ div#setting-error-settings_updated {
 .popup-close:hover { color: #333; }
 
 #popup_bobytext2 {
-    font-weight: bold;
+    margin-top: 12px;
+    font-weight: normal;
+}
+#popup_review_list #popup_bobytext2 .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0 12px;
+    margin: 0;
+    box-sizing: border-box;
+    line-height: 1.2;
+    text-decoration: none;
+}
+#popup_review_list #popup_bobytext2 .button.dashicons-before::before {
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+#popup_review_list #popup_bobytext2 a.button.dashicons-no {
+    background: #d63638;
+    border-color: #d63638;
+    color: #fff;
+}
+#popup_review_list #popup_bobytext2 a.button.dashicons-no:hover,
+#popup_review_list #popup_bobytext2 a.button.dashicons-no:focus {
+    background: #b32d2e;
+    border-color: #b32d2e;
+    color: #fff;
+}
+#popup_review_list #popup_bobytext2 a.button.dashicons-cart {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+#popup_review_list #popup_bobytext2 a.button.dashicons-cart:hover,
+#popup_review_list #popup_bobytext2 a.button.dashicons-cart:focus {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
 }
 /*---------------review list page-------------*/
 .wpyelp_margin10 {
@@ -151,18 +196,32 @@ div#setting-error-settings_updated {
     padding-right: 2px;
 }
 #wpyelp_review_list_pagination_bar {
-    margin-top: 10px;
-	margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #dcdcde;
+}
+#wpyelp_review_list_pagination_bar .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    padding: 0 10px;
+    margin: 0;
+    text-decoration: none;
+    line-height: 1.2;
+}
+#wpyelp_review_list_pagination_bar a.button.blue_grey {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
 }
 .button.blue_grey {
     background: #cccccc;
-}
-div#wpyelp_new_review {
-    border: 1px solid #e5e5e5;
-    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.04);
-    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
-    padding: 10px;
-	display: none;
 }
 .hiderevbtn {
     cursor: pointer;
@@ -245,6 +304,43 @@ span#wpyelp_selectedrevsdiv {
 
 div#wpyelp_template_preview {
     margin-left: -10px;
+    min-height: 120px;
+}
+/* clearfix the floated w3 grid columns so the preview column doesn't collapse */
+#wpyelp_new_template .w3_wprs-row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+#wpyelp_new_template .settingstable td {
+    padding-left: 0;
+}
+#wpyelp_new_template .wprevpre_temp_label_row select,
+#wpyelp_new_template .wprevpre_temp_label_row input[type="number"] {
+    max-width: 100%;
+}
+#wpyelp_template_preview .wpyelp_t1_outer_div,
+#wpyelp_template_preview .wprevpro_t6_outer_div {
+    max-width: 360px;
+}
+#wpyelp_template_preview .w3_wprs-col {
+    float: none;
+    width: 100%;
+}
+.wprevtooltip { cursor: pointer; }
+.wprevpro_tooltip {
+    display: none;
+    position: absolute;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #efefef;
+    background-color: #000000bf;
+    border-radius: 3px;
+    font-family: sans-serif;
+    font-style: normal;
+    font-size: 10px;
+    line-height: 24px;
+    z-index: 999999;
 }
 span#wpyelp_clearselectedrevsbtn {
     vertical-align: -webkit-baseline-middle;
@@ -305,24 +401,35 @@ input#yelp_business_url {
 .wrap.wp_yelp-settings select {
     padding: 0 24px 0 8px;
 }
-#wp_rev_maindiv .button,
-#wp_rev_maindiv .button-secondary,
-#wp_rev_maindiv a.button,
+#wp_rev_maindiv .button:not(.wp-color-result),
+#wp_rev_maindiv .button-secondary:not(.wp-color-result),
+#wp_rev_maindiv a.button:not(.wp-color-result),
 #wp_rev_maindiv input.button,
-.wrap.wp_yelp-settings .button,
-.wrap.wp_yelp-settings .button-secondary,
-.wrap.wp_yelp-settings a.button,
+.wrap.wp_yelp-settings .button:not(.wp-color-result),
+.wrap.wp_yelp-settings .button-secondary:not(.wp-color-result),
+.wrap.wp_yelp-settings a.button:not(.wp-color-result),
 .wrap.wp_yelp-settings input.button {
     border-color: #ccc;
     background: #f6f7f7;
     color: #505050;
-    height: 28px;
-    min-height: 28px;
-    max-height: 28px;
-    padding-top: 0;
-    padding-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    min-height: 30px;
+    padding: 0 12px;
     box-sizing: border-box;
-    line-height: 1;
+    line-height: 1.2;
+    vertical-align: middle;
+    text-decoration: none;
+}
+/* Do not restyle WP color picker buttons — flex/padding breaks the swatch + label layout */
+#wp_rev_maindiv .wp-picker-container .wp-color-result.button,
+#wp_rev_maindiv .wp-picker-container a.wp-color-result.button,
+.wrap.wp_yelp-settings .wp-picker-container .wp-color-result.button,
+.wrap.wp_yelp-settings .wp-picker-container a.wp-color-result.button,
+#wpyelp_new_template .wp-picker-container .wp-color-result.button {
+    display: inline-block;
 }
 #wp_rev_maindiv img.wprev_headerimg {
     width: 148px;
@@ -335,6 +442,14 @@ input#yelp_business_url {
 .wrap.wp_yelp-settings form p.description {
     font-size: 14px;
     margin: .4em 0;
+}
+#wpyelp_new_template p.description {
+    display: none;
+}
+.wpyelp_helpicon_p.wpyelp_btnicononlyhelp::before {
+    padding-top: 0;
+    cursor: pointer;
+    margin-top: 0;
 }
 #wp_rev_maindiv #newtemplateform input[type="submit"].button,
 #wp_rev_maindiv #newtemplateform a.button,
@@ -411,6 +526,17 @@ input#yelp_business_url {
 #wp_rev_maindiv .wpyelp_btnicononly.button.dashicons-before,
 .wrap.wp_yelp-settings .wpyelp_btnicononly.button.dashicons-before {
     padding: 0 !important;
+}
+/* "Next" template-tab button: dashicons only defines the arrow glyph on ::before,
+   so keep it on ::before for the content to render, but flip it after the label
+   text with flex order so it reads "Next ->" instead of "-> Next". */
+#wp_rev_maindiv .button.dashicons-arrow-right-after::before,
+#wp_rev_maindiv a.button.dashicons-arrow-right-after::before,
+.wrap.wp_yelp-settings .button.dashicons-arrow-right-after::before,
+.wrap.wp_yelp-settings a.button.dashicons-arrow-right-after::before {
+    font-family: dashicons;
+    content: "\f139";
+    order: 1;
 }
 #wp_rev_maindiv .wpyelp_margin10:has(> .button),
 #wp_rev_maindiv .wpyelp_margin10:has(> a.button),
@@ -592,3 +718,123 @@ img{vertical-align:middle;}
 .fs-permissions ul li .fs-permission-description .fs-tooltip{font-size:13px;font-weight:700;}
 .fs-permissions ul li .fs-permission-description .fs-tooltip-trigger .dashicons{margin:-1px 2px 0;}
 .fs-permissions ul li .fs-permission-description p{margin:2px 0 0;}
+
+/*-------- review list: hidden rows, icon buttons, media, edit modal (v9.0) -------*/
+tr.hiddenrow {
+	background-color: #9c9c9c !important;
+}
+.wprevpro_iconbtn {
+	cursor: pointer;
+	display: inline-block;
+}
+.wprevpro_iconbtn .dashicons {
+	color: #50575e;
+}
+.wprevpro_iconbtn:hover .dashicons {
+	color: #135e96;
+}
+.mediaimgsdiv {
+	margin-top: 6px;
+}
+.mediaimgsdiv a {
+	display: inline-block;
+	margin: 0 4px 4px 0;
+}
+.mediaimgsdiv img {
+	border-radius: 3px;
+}
+
+/*-------- review edit popup / modal -------*/
+.wprevpro_modal_overlay {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.55);
+	z-index: 100050;
+	align-items: flex-start;
+	justify-content: center;
+	overflow-y: auto;
+	padding: 40px 20px;
+	box-sizing: border-box;
+}
+.wprevpro_modal_overlay.is-open {
+	display: flex;
+}
+.wprevpro_modal_box {
+	position: relative;
+	max-width: 600px;
+	width: 100%;
+	max-height: calc(100vh - 80px);
+	overflow-y: auto;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, .3);
+	padding: 25px 30px 20px !important;
+}
+.wprevpro_modal_box h2 {
+	margin-top: 0;
+}
+.wprevpro_modal_closebtn {
+	position: absolute;
+	top: 6px;
+	right: 12px;
+	background: transparent;
+	border: 0;
+	font-size: 28px;
+	line-height: 1;
+	color: #888;
+	cursor: pointer;
+	padding: 0;
+}
+.wprevpro_modal_closebtn:hover {
+	color: #333;
+}
+#wprevpro_save_review_msg .notice {
+	margin: 0 0 12px;
+}
+#wprevpro_save_review_msg .wprevpro_error_msg {
+	color: #b32d2e;
+	font-weight: 600;
+	margin: 0 0 12px;
+}
+
+/* Template editor tabs + badge settings */
+.cursorpointer { cursor: pointer; }
+.settingtab { cursor: pointer; }
+.settingtab.nav-tab { margin-left: 0; }
+.settingstable { border-bottom: 1px solid #ccc; margin-bottom: 10px; }
+#wpyelp_new_template .settingstable td { padding-left: 0; }
+.badgeinfo { display: flex; gap: 20px; flex-wrap: wrap; }
+.bsetlabel { font-weight: 600; }
+.badgeinfosetting.checkboxes { display: flex; align-items: center; gap: 2px; }
+.badgeinfosetting.checkboxes label { cursor: pointer; }
+#wpyelp_new_template .badgeinfosetting:not(.checkboxes) {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+#wpyelp_new_template .badgeinfosetting:not(.checkboxes) .bsetlabel {
+    flex: 0 0 auto; margin: 0;
+}
+tr.wpyelp_row.tabnoterow td { padding: 10px; }
+tr.wpyelp_row.tabnoterow { background: #f6f6f6; }
+.nextprevbtn { margin-right: 6px; }
+.tabnote { font-size: 13px; color: #555; }
+
+/* Server-rendered template preview (Save & Preview / Refresh Preview) */
+#update_form_msg_div { display: inline-block; vertical-align: middle; margin-left: 6px; }
+.wpyelp_form_spinner { float: none; margin: 0 4px 0 0; visibility: hidden; }
+.wpyelp_form_spinner.is-active { visibility: visible; }
+#update_form_msg { color: #46b450; font-weight: 600; }
+#update_form_msg .dashicons { color: #46b450; }
+#wpyelp_preview_outermost {
+    margin-top: 20px;
+    padding: 16px;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    background: #fff;
+}
+#wpyelp_loading_prev_div { min-height: 20px; }
+.wpyelp_preview_spinner { float: none; margin: 0; visibility: hidden; }
+.wpyelp_preview_spinner.is-active { visibility: visible; }
+#wpyelp_preview_outer { margin-top: 10px; }
+

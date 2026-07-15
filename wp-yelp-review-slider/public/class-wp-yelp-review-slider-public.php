@@ -123,6 +123,15 @@ class WP_Yelp_Review_Public {
 		wp_enqueue_script( $this->_token."_plublic", plugin_dir_url( __FILE__ ) . 'js/wprev-public.js', array( 'jquery' ), $this->version, false );
 		wp_enqueue_script( $this->_token."_unslider-min", plugin_dir_url( __FILE__ ) . 'js/wprs-unslider-min.js', array( 'jquery' ), $this->version, false );
 
+		//base plugin URL so wprev-public.js can lazy-load the Lity lightbox for review media (Style 6).
+		wp_localize_script(
+			$this->_token."_plublic",
+			'wprevpublicjs_script_vars',
+			array(
+				'wprevplugin_url' => untrailingslashit( plugin_dir_url( dirname( __FILE__ ) ) ),
+			)
+		);
+
 	}
 	
 	/**

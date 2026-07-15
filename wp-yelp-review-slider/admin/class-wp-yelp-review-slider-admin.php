@@ -40,7 +40,15 @@ class WP_Yelp_Review_Admin {
 	 */
 	private $version;
 	private $_token;
-	private $errormsg;
+	public $errormsg;
+
+	/**
+	 * Holds the raw/parsed crawl-server response from the most recent crawl call
+	 * so it can be surfaced to the browser console for debugging.
+	 *
+	 * @var array|null
+	 */
+	public $last_crawl_debug = null;
 
 	/**
 	 * Initialize the class and set its properties.
@@ -93,6 +101,12 @@ class WP_Yelp_Review_Admin {
 			//load template styles for preview
 			if($_GET['page']=="wp_yelp-templates_posts"|| $_GET['page']=="wp_yelp-get_pro" || $_GET['page']=="wp_yelp-welcome"){
 				wp_enqueue_style( $this->_token."_style1", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template1.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token."_style6", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
+				//slider styles so the live preview matches the front end
+				wp_enqueue_style( $this->_token."_unslider", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprs_unslider.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token."_unslider_dots", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprs_unslider-dots.css', array(), $this->version, 'all' );
+				//lity for review media lightbox in the template preview
+				wp_enqueue_style( $this->_token."_lity", plugin_dir_url(dirname(__FILE__)) . 'public/css/lity.min.css', array(), $this->version, 'all' );
 			}
 		}
 
@@ -126,6 +140,15 @@ class WP_Yelp_Review_Admin {
 				wp_enqueue_script( 'simple-popup-js' );
 				
 			}
+			//scripts for the get yelp reviews page (multi-source add/download)
+			if($_GET['page']=="wp_yelp-get_yelp"){
+				wp_enqueue_script('wpyelp_get_yelp-js', plugin_dir_url( __FILE__ ) . 'js/wpyelp_get_yelp.js', array( 'jquery' ), $this->version, false );
+				wp_localize_script('wpyelp_get_yelp-js', 'adminjs_script_vars',
+					array(
+					'wpyelp_nonce'=> wp_create_nonce('randomnoncestring')
+					)
+				);
+			}
 		}
 		
 	
@@ -133,14 +156,32 @@ class WP_Yelp_Review_Admin {
 		if(isset($_GET['page'])){
 			if($_GET['page']=="wp_yelp-reviews"){
 				//admin js
-				wp_enqueue_script('wpyelp_review_list_page-js', plugin_dir_url( __FILE__ ) . 'js/wpyelp_review_list_page.js', array( 'jquery','media-upload','thickbox' ), $this->version, false );
+				// Depend only on jQuery. thickbox/media-upload are enqueued separately below
+				// for the avatar uploader; declaring them as hard dependencies here risks
+				// WordPress silently dropping this script if either handle isn't registered,
+				// which would break the edit popup, hide, and delete AJAX handlers.
+				wp_enqueue_script('wpyelp_review_list_page-js', plugin_dir_url( __FILE__ ) . 'js/wpyelp_review_list_page.js', array( 'jquery' ), $this->version, false );
+
+				//list of source (page) names for the "Remove by source" popup
+				global $wpdb;
+				$reviews_table_name = $wpdb->prefix . 'wpyelp_reviews';
+				$pagenamearray = $wpdb->get_col( "SELECT pagename FROM {$reviews_table_name} WHERE pagename != '' GROUP BY pagename" );
+				if ( ! is_array( $pagenamearray ) ) {
+					$pagenamearray = array();
+				}
+
 				//used for ajax
 				wp_localize_script('wpyelp_review_list_page-js', 'adminjs_script_vars', 
 					array(
-					'wpyelp_nonce'=> wp_create_nonce('randomnoncestring')
+					'wpyelp_nonce'=> wp_create_nonce('randomnoncestring'),
+					'pagenamearray' => wp_json_encode( $pagenamearray )
 					)
 				);
-				
+
+				//lity lightbox for review media thumbnails
+				wp_enqueue_style( $this->_token."lity_min", plugin_dir_url( __FILE__ ) . 'css/lity.min.css', array(), $this->version, 'all' );
+				wp_enqueue_script('wpyelp_lity-js', plugin_dir_url( __FILE__ ) . 'js/lity.min.js', array( 'jquery' ), $this->version, false );
+
  				wp_enqueue_script('thickbox');
 				wp_enqueue_style('thickbox');
 		 
@@ -152,8 +193,20 @@ class WP_Yelp_Review_Admin {
 			//scripts for templates posts page
 			if($_GET['page']=="wp_yelp-templates_posts"){
 			
+				//slider scripts so the live preview can build a working slider
+				wp_enqueue_script('wpyelp_unslider-js', plugin_dir_url(dirname(__FILE__)) . 'public/js/wprs-unslider-min.js', array( 'jquery' ), $this->version, false );
+				wp_enqueue_script('wpyelp_unslider_swipe-js', plugin_dir_url(dirname(__FILE__)) . 'public/js/wprs-unslider-swipe.js', array( 'jquery','wpyelp_unslider-js' ), $this->version, false );
+
+				//public script for the preview (lity lightbox binding for review media thumbnails, tooltips, etc)
+				//registered before the admin js below so it's guaranteed to load first (declared as a dependency).
+				wp_enqueue_script( $this->_token."_lity", plugin_dir_url(dirname(__FILE__)) . 'public/js/lity.min.js', array( 'jquery' ), $this->version, false );
+				wp_enqueue_script( $this->_token."_plublic", plugin_dir_url(dirname(__FILE__)) . 'public/js/wprev-public.js', array( 'jquery' ), $this->version, false );
+				wp_localize_script( $this->_token."_plublic", 'wprevpublicjs_script_vars', array(
+					'wprevplugin_url' => untrailingslashit( plugin_dir_url( dirname( __FILE__ ) ) ),
+				) );
+
 				//admin js
-				wp_enqueue_script('wpyelp_templates_posts_page-js', plugin_dir_url( __FILE__ ) . 'js/wpyelp_templates_posts_page.js', array( 'jquery' ), $this->version, false );
+				wp_enqueue_script('wpyelp_templates_posts_page-js', plugin_dir_url( __FILE__ ) . 'js/wpyelp_templates_posts_page.js', array( 'jquery','wpyelp_unslider-js', $this->_token."_lity", $this->_token."_plublic" ), $this->version, false );
 				//used for ajax
 				wp_localize_script('wpyelp_templates_posts_page-js', 'adminjs_script_vars', 
 					array(
@@ -163,6 +216,7 @@ class WP_Yelp_Review_Admin {
 				);
  				wp_enqueue_script('thickbox');
 				wp_enqueue_style('thickbox');
+				wp_enqueue_script('media-upload');
 				
 				//add color picker here
 				wp_enqueue_style( 'wp-color-picker' );
@@ -497,6 +551,93 @@ class WP_Yelp_Review_Admin {
 	}
 	
 	/**
+	 * AJAX: save an edited review (reviewer photo URL + display date) without a
+	 * page reload, called from wpyelp_review_list_page.js.
+	 *
+	 * @access public
+	 * @since  9.0
+	 * @return void
+	 */
+	public function wpyelp_savereview_ajax() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'wp-yelp-reviews' ) ) );
+			return;
+		}
+
+		check_ajax_referer( 'randomnoncestring', 'wpyelp_nonce' );
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'wpyelp_reviews';
+
+		$r_id       = isset( $_POST['editrid'] ) ? absint( $_POST['editrid'] ) : 0;
+		$avatar_url = isset( $_POST['avatar_url'] ) ? esc_url_raw( wp_unslash( $_POST['avatar_url'] ) ) : '';
+		$rdate_raw  = isset( $_POST['review_date'] ) ? sanitize_text_field( wp_unslash( $_POST['review_date'] ) ) : '';
+
+		if ( $r_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid review.', 'wp-yelp-reviews' ) ) );
+			return;
+		}
+
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $r_id ) );
+		if ( ! $existing ) {
+			wp_send_json_error( array( 'message' => __( 'Review not found.', 'wp-yelp-reviews' ) ) );
+			return;
+		}
+
+		$parsed_stamp = $rdate_raw !== '' ? strtotime( $rdate_raw ) : false;
+		if ( ! $parsed_stamp ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid date. Use the format YYYY-MM-DD HH:MM:SS.', 'wp-yelp-reviews' ) ) );
+			return;
+		}
+
+		$created_time = date( 'Y-m-d H:i:s', $parsed_stamp );
+		$data         = array(
+			'userpic'            => $avatar_url,
+			'created_time'       => $created_time,
+			'created_time_stamp' => $parsed_stamp,
+		);
+		$format = array( '%s', '%s', '%d' );
+
+		// Keep hidden-reviews fingerprint in sync when the date changes.
+		if ( $existing->hide === 'yes' ) {
+			$old_val = $existing->reviewer_name . '-' . $existing->created_time_stamp . '-' . $existing->review_length . '-' . $existing->type . '-' . $existing->rating;
+			$new_val = $existing->reviewer_name . '-' . $parsed_stamp . '-' . $existing->review_length . '-' . $existing->type . '-' . $existing->rating;
+
+			$yelphidden      = get_option( 'wpyelp_hidden_reviews' );
+			$yelphiddenarray = $yelphidden ? json_decode( $yelphidden, true ) : array();
+			if ( ! is_array( $yelphiddenarray ) ) {
+				$yelphiddenarray = array();
+			}
+			$key = array_search( $old_val, $yelphiddenarray, true );
+			if ( $key !== false ) {
+				$yelphiddenarray[ $key ] = $new_val;
+				update_option( 'wpyelp_hidden_reviews', wp_json_encode( array_values( $yelphiddenarray ) ) );
+			}
+		}
+
+		$updated = $wpdb->update(
+			$table_name,
+			$data,
+			array( 'id' => $r_id ),
+			$format,
+			array( '%d' )
+		);
+
+		if ( false === $updated ) {
+			wp_send_json_error( array( 'message' => __( 'Database error while saving. Please try again.', 'wp-yelp-reviews' ) ) );
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'id'      => $r_id,
+				'userpic' => $avatar_url !== '' ? esc_url( $avatar_url ) : '',
+				'date'    => esc_html( $created_time ),
+			)
+		);
+	}
+
+	/**
 	 * Ajax, retrieves reviews from table, called from javascript file wpyelp_templates_posts_page.js
 	 * @access  public
 	 * @since   1.0.0
@@ -738,6 +879,766 @@ class WP_Yelp_Review_Admin {
 		$this->wpyelp_download_yelp_master();
       }
     }
+
+	/**
+	 * Get saved Yelp crawl sources, migrating the legacy single URL if needed.
+	 *
+	 * @return array
+	 */
+	public function wpyelp_get_crawls() {
+		$raw = get_option( 'wprev_yelp_crawls', 'not-exists' );
+		if ( 'not-exists' === $raw ) {
+			$crawls = array();
+			update_option( 'wprev_yelp_crawls', wp_json_encode( $crawls ) );
+		} else {
+			$crawls = json_decode( $raw, true );
+			if ( ! is_array( $crawls ) ) {
+				$crawls = array();
+			}
+		}
+
+		// Migrate legacy single yelp_business_url into crawls.
+		$options = get_option( 'wpyelp_yelp_settings' );
+		if ( is_array( $options ) && ! empty( $options['yelp_business_url'] ) ) {
+			$url = esc_url_raw( trim( $options['yelp_business_url'] ) );
+			if ( $url && filter_var( $url, FILTER_VALIDATE_URL ) ) {
+				$pageid = $this->wpyelp_extract_pageid_from_url( $url );
+				if ( $pageid && ! isset( $crawls[ $pageid ] ) ) {
+					$crawls[ $pageid ] = array(
+						'pageid'       => $pageid,
+						'businessname' => $this->wpyelp_extract_businessname_from_url( $url ),
+						'url'          => $url,
+						'avg'          => '',
+						'total'        => '',
+					);
+					update_option( 'wprev_yelp_crawls', wp_json_encode( $crawls ) );
+				}
+			}
+		}
+
+		return $crawls;
+	}
+
+	/**
+	 * Persist crawls option and keep legacy yelp_business_url in sync.
+	 *
+	 * @param array $crawls Sources keyed by pageid.
+	 */
+	public function wpyelp_save_crawls( $crawls ) {
+		if ( ! is_array( $crawls ) ) {
+			$crawls = array();
+		}
+		update_option( 'wprev_yelp_crawls', wp_json_encode( $crawls ) );
+
+		// Keep first source URL in legacy option for older template link fallbacks.
+		$options = get_option( 'wpyelp_yelp_settings' );
+		if ( ! is_array( $options ) ) {
+			$options = array();
+		}
+		$first_url = '';
+		foreach ( $crawls as $source ) {
+			if ( is_array( $source ) && ! empty( $source['url'] ) ) {
+				$first_url = $source['url'];
+				break;
+			}
+		}
+		$options['yelp_business_url'] = $first_url;
+		update_option( 'wpyelp_yelp_settings', $options );
+	}
+
+	/**
+	 * Extract a Yelp page id (the /biz/ slug) from a business URL.
+	 *
+	 * @param string $url Yelp URL.
+	 * @return string
+	 */
+	public function wpyelp_extract_pageid_from_url( $url ) {
+		$url = strtok( $url, '?' );
+		if ( preg_match( '~/biz/([^/?#]+)~i', $url, $m ) ) {
+			return sanitize_title( $m[1] );
+		}
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		if ( $path ) {
+			$base = trim( $path, '/' );
+			$base = basename( $base );
+			if ( $base ) {
+				return sanitize_title( $base );
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * Best-effort business name from a Yelp URL /biz/ slug.
+	 *
+	 * @param string $url Yelp URL.
+	 * @return string
+	 */
+	public function wpyelp_extract_businessname_from_url( $url ) {
+		$pageid = $this->wpyelp_extract_pageid_from_url( $url );
+		if ( $pageid === '' ) {
+			return 'Yelp Business';
+		}
+		// Drop a trailing numeric disambiguator (e.g. "-2") Yelp appends to slugs.
+		$slug = preg_replace( '/-\d+$/', '', $pageid );
+		$slug = str_replace( '-', ' ', $slug );
+		return ucwords( trim( $slug ) );
+	}
+
+	/**
+	 * Build one source table row HTML for AJAX add.
+	 *
+	 * @param string $pageid Page id.
+	 * @param array  $source Source data.
+	 * @return string
+	 */
+	public function wpyelp_source_row_html( $pageid, $source ) {
+		$bname     = isset( $source['businessname'] ) ? $source['businessname'] : '';
+		$url       = isset( $source['url'] ) ? $source['url'] : '';
+		$avg       = isset( $source['avg'] ) ? $source['avg'] : '';
+		$total     = isset( $source['total'] ) ? $source['total'] : '';
+		$avg_total = ( $avg !== '' || $total !== '' ) ? esc_html( $avg ) . ' / ' . esc_html( $total ) : '—';
+		$del_url   = wp_nonce_url(
+			admin_url( 'admin.php?page=wp_yelp-get_yelp&ract=del&pageid=' . rawurlencode( $pageid ) ),
+			'wpyelp_del_source'
+		);
+
+		ob_start();
+		?>
+		<tr data-pageid="<?php echo esc_attr( $pageid ); ?>">
+			<td>
+				<?php echo esc_html( $bname ); ?>
+				<?php if ( $url ) : ?>
+					<br><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View on Yelp', 'wp-yelp-reviews' ); ?></a>
+				<?php endif; ?>
+			</td>
+			<td><?php echo esc_html( $pageid ); ?></td>
+			<td class="yelp-source-stats"><?php echo $avg_total; ?></td>
+			<td>
+				<button type="button" class="button button-primary downloadrevs" data-pageid="<?php echo esc_attr( $pageid ); ?>"><?php esc_html_e( 'Download Reviews', 'wp-yelp-reviews' ); ?></button>
+				<span class="buttonloader2 wprevloader"></span>
+				<a class="button" style="color:#a00;" href="<?php echo esc_url( $del_url ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete this source and its reviews?', 'wp-yelp-reviews' ) ); ?>');"><?php esc_html_e( 'Delete', 'wp-yelp-reviews' ); ?></a>
+				<span class="yelp-source-msg"></span>
+			</td>
+		</tr>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Delete a source, its reviews, and averages row.
+	 *
+	 * @param string $pageid Page id.
+	 */
+	public function wpyelp_delete_source( $pageid ) {
+		$pageid = sanitize_text_field( $pageid );
+		if ( $pageid === '' ) {
+			return;
+		}
+		$crawls = $this->wpyelp_get_crawls();
+		unset( $crawls[ $pageid ] );
+		$this->wpyelp_save_crawls( $crawls );
+
+		global $wpdb;
+		$wpdb->delete( $wpdb->prefix . 'wpyelp_reviews', array( 'pageid' => $pageid ) );
+		$wpdb->delete( $wpdb->prefix . 'wpyelp_total_averages', array( 'btp_id' => $pageid ) );
+	}
+
+	/**
+	 * AJAX: add a Yelp source URL.
+	 */
+	public function wpyelp_ajax_add_source() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => 'Insufficient permissions.' ) );
+			wp_die();
+		}
+		check_ajax_referer( 'randomnoncestring', 'wpyelp_nonce' );
+
+		$url  = isset( $_POST['yelp_url'] ) ? esc_url_raw( trim( wp_unslash( $_POST['yelp_url'] ) ) ) : '';
+		$name = isset( $_POST['businessname'] ) ? sanitize_text_field( wp_unslash( $_POST['businessname'] ) ) : '';
+
+		if ( ! $url || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'Please enter a valid Yelp URL.', 'wp-yelp-reviews' ) ) );
+			wp_die();
+		}
+		if ( stripos( $url, 'yelp.' ) === false ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'URL must be a Yelp business page.', 'wp-yelp-reviews' ) ) );
+			wp_die();
+		}
+
+		$pageid = $this->wpyelp_extract_pageid_from_url( $url );
+		if ( $pageid === '' ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'Could not determine a page ID from that URL.', 'wp-yelp-reviews' ) ) );
+			wp_die();
+		}
+
+		$crawls = $this->wpyelp_get_crawls();
+		if ( isset( $crawls[ $pageid ] ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'That source is already added.', 'wp-yelp-reviews' ) ) );
+			wp_die();
+		}
+
+		if ( $name === '' ) {
+			$name = $this->wpyelp_extract_businessname_from_url( $url );
+		}
+
+		$source = array(
+			'pageid'       => $pageid,
+			'businessname' => $name,
+			'url'          => strtok( $url, '?' ),
+			'avg'          => '',
+			'total'        => '',
+		);
+		$crawls[ $pageid ] = $source;
+		$this->wpyelp_save_crawls( $crawls );
+
+		echo wp_json_encode(
+			array(
+				'ack'      => 'success',
+				'ackmsg'   => __( 'Source added. Click Download Reviews to fetch reviews.', 'wp-yelp-reviews' ),
+				'pageid'   => $pageid,
+				'row_html' => $this->wpyelp_source_row_html( $pageid, $source ),
+			)
+		);
+		wp_die();
+	}
+
+	/**
+	 * AJAX: download reviews for one saved source.
+	 */
+	public function wpyelp_ajax_download_source() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => 'Insufficient permissions.' ) );
+			wp_die();
+		}
+		check_ajax_referer( 'randomnoncestring', 'wpyelp_nonce' );
+
+		$pageid = isset( $_POST['pageid'] ) ? sanitize_text_field( wp_unslash( $_POST['pageid'] ) ) : '';
+		$crawls = $this->wpyelp_get_crawls();
+		if ( $pageid === '' || empty( $crawls[ $pageid ]['url'] ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'Source not found. Add the URL again.', 'wp-yelp-reviews' ) ) );
+			wp_die();
+		}
+
+		$result = $this->wpyelp_download_one_source(
+			$crawls[ $pageid ]['url'],
+			$pageid,
+			isset( $crawls[ $pageid ]['businessname'] ) ? $crawls[ $pageid ]['businessname'] : ''
+		);
+
+		echo wp_json_encode( $result );
+		wp_die();
+	}
+
+	/**
+	 * Download and store reviews for a single Yelp source URL.
+	 *
+	 * Yelp pages return ~10 recommended reviews each. Page through until we have
+	 * at least 10 reviews (free cap), following the crawl server's page numbers.
+	 *
+	 * @param string $tempurl  Yelp business URL.
+	 * @param string $pageid   Page id (biz slug).
+	 * @param string $pagename Business name.
+	 * @return array
+	 */
+	public function wpyelp_download_one_source( $tempurl, $pageid = '', $pagename = '' ) {
+		ini_set( 'memory_limit', '800M' );
+		set_time_limit( 180 );
+
+		$result = array(
+			'ack'    => 'success',
+			'ackmsg' => '',
+			'avg'    => '',
+			'total'  => '',
+		);
+
+		$tempurl = trim( $tempurl );
+		if ( ! filter_var( $tempurl, FILTER_VALIDATE_URL ) ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = __( 'Please enter a valid URL.', 'wp-yelp-reviews' );
+			return $result;
+		}
+
+		$tempurl = strtok( $tempurl, '?' );
+
+		if ( $pageid === '' ) {
+			$pageid = $this->wpyelp_extract_pageid_from_url( $tempurl );
+		}
+		if ( $pagename === '' ) {
+			$pagename = $this->wpyelp_extract_businessname_from_url( $tempurl );
+		}
+
+		global $wpdb;
+		$table_name  = $wpdb->prefix . 'wpyelp_reviews';
+		$totalinsert = 0;
+
+		$listedurl = $tempurl;
+		// Manual downloads use iscron=no so the crawl server does not throttle us.
+		$iscron = 'no';
+
+		$all_reviews     = array();
+		$source_avg      = '';
+		$source_total    = '';
+		$crawl_debug_log = array();
+		$min_reviews     = 10;
+		$max_loops       = 3;
+		$reviewscrawl    = null;
+
+		for ( $loop = 1; $loop <= $max_loops; $loop++ ) {
+			$reviewscrawl = $this->wprpfree_getapps_getrevs_page_yelp( $listedurl, $loop, $iscron );
+
+			if ( ! empty( $this->last_crawl_debug ) ) {
+				$crawl_debug_log[] = $this->last_crawl_debug;
+			}
+
+			if ( ! is_array( $reviewscrawl ) ) {
+				break;
+			}
+
+			if ( $source_avg === '' && ! empty( $reviewscrawl['avg'] ) ) {
+				$source_avg = $reviewscrawl['avg'];
+			}
+			if ( $source_total === '' && ! empty( $reviewscrawl['total'] ) ) {
+				$source_total = $reviewscrawl['total'];
+			}
+
+			$page_reviews = ( ! empty( $reviewscrawl['reviews'] ) && is_array( $reviewscrawl['reviews'] ) ) ? $reviewscrawl['reviews'] : array();
+			if ( ! empty( $page_reviews ) ) {
+				$all_reviews = array_merge( $all_reviews, $page_reviews );
+			}
+
+			// Stop once we have enough, or when a page returns nothing new.
+			if ( count( $all_reviews ) >= $min_reviews || empty( $page_reviews ) ) {
+				break;
+			}
+
+			sleep( 1 );
+		}
+
+		// Free version: keep at most 10 reviews.
+		if ( count( $all_reviews ) > $min_reviews ) {
+			$all_reviews = array_slice( $all_reviews, 0, $min_reviews );
+		}
+
+		$result['crawl_debug'] = $crawl_debug_log;
+
+		if ( empty( $all_reviews ) ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = __( 'Unable to find any reviews. Please try again or contact support.', 'wp-yelp-reviews' );
+			return $result;
+		}
+
+		$result['avg']   = $source_avg;
+		$result['total'] = $source_total;
+
+		$reviews = array();
+		foreach ( $all_reviews as $review ) {
+			$rtext         = isset( $review['review_text'] ) ? $review['review_text'] : '';
+			$review_length = str_word_count( $rtext );
+			$unixtimestamp = strtotime( isset( $review['updated'] ) ? $review['updated'] : '' );
+			if ( ! $unixtimestamp ) {
+				$unixtimestamp = time();
+			}
+			$timestamp = date( 'Y-m-d H:i:s', $unixtimestamp );
+
+			// Dedupe by name + length (+ pageid) so re-downloads don't duplicate rows.
+			if ( $pageid !== '' ) {
+				$checkrow = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT id, mediaurlsarrayjson, owner_response FROM {$table_name} WHERE reviewer_name = %s AND review_length = %d AND pageid = %s",
+						$review['reviewer_name'],
+						$review_length,
+						$pageid
+					)
+				);
+			} else {
+				$checkrow = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT id, mediaurlsarrayjson, owner_response FROM {$table_name} WHERE reviewer_name = %s AND (review_length = %d OR created_time = %s)",
+						$review['reviewer_name'],
+						$review_length,
+						$timestamp
+					)
+				);
+			}
+
+			if ( ! empty( $checkrow ) ) {
+				// Backfill fields that earlier downloads couldn't capture yet (e.g. review
+				// photos added in a later plugin version) without creating duplicate rows.
+				$backfill = array();
+				if ( empty( $checkrow->mediaurlsarrayjson ) && ! empty( $review['mediaurlsarrayjson'] ) ) {
+					$backfill['mediaurlsarrayjson'] = $review['mediaurlsarrayjson'];
+				}
+				if ( empty( $checkrow->owner_response ) && ! empty( $review['owner_response'] ) ) {
+					$backfill['owner_response'] = sanitize_textarea_field( $review['owner_response'] );
+				}
+				if ( ! empty( $backfill ) ) {
+					$wpdb->update( $table_name, $backfill, array( 'id' => (int) $checkrow->id ) );
+				}
+				continue;
+			}
+
+			$userpic = isset( $review['userpic'] ) ? $review['userpic'] : '';
+			// Bump Yelp avatar to the larger size when it isn't a default avatar.
+			if ( $userpic !== '' && strpos( $userpic, 'default_avatars' ) === false ) {
+				$userpic = str_replace( '60s.jpg', '120s.jpg', $userpic );
+			}
+
+			// Re-hide previously hidden reviews on re-download.
+			$yelphidden = get_option( 'wpyelp_hidden_reviews' );
+			$yelphiddenarray = $yelphidden ? json_decode( $yelphidden, true ) : array( '' );
+			if ( ! is_array( $yelphiddenarray ) ) {
+				$yelphiddenarray = array( '' );
+			}
+			$this_yelp_val = trim( $review['reviewer_name'] ) . '-' . $unixtimestamp . '-' . $review_length . '-Yelp-' . (int) $review['rating'];
+			$hideme        = in_array( $this_yelp_val, $yelphiddenarray, true ) ? 'yes' : '';
+
+			// Defense in depth: re-sanitize immediately before the DB write.
+			$reviews[] = array(
+				'pageid'             => $pageid,
+				'pagename'           => trim( $pagename ),
+				'reviewer_name'      => sanitize_text_field( $review['reviewer_name'] ),
+				'userpic'            => esc_url_raw( $userpic ),
+				'rating'             => (int) $review['rating'],
+				'created_time'       => $timestamp,
+				'created_time_stamp' => $unixtimestamp,
+				'review_text'        => sanitize_textarea_field( trim( $rtext ) ),
+				'hide'               => $hideme,
+				'review_length'      => $review_length,
+				'type'               => 'Yelp',
+				'location'           => isset( $review['location'] ) ? sanitize_text_field( $review['location'] ) : '',
+				'owner_response'     => isset( $review['owner_response'] ) ? $review['owner_response'] : '',
+				'mediaurlsarrayjson' => isset( $review['mediaurlsarrayjson'] ) ? $review['mediaurlsarrayjson'] : '',
+				'from_url'           => esc_url_raw( $listedurl ),
+				'from_url_review'    => isset( $review['from_url_review'] ) ? esc_url_raw( $review['from_url_review'] ) : '',
+			);
+		}
+
+		$reviewtexts   = array();
+		$insertreviews = array();
+		foreach ( $reviews as $stat ) {
+			if ( ! in_array( $stat['review_text'], $reviewtexts, true ) || $stat['review_text'] === '' ) {
+				$insertreviews[] = $stat;
+			}
+			$reviewtexts[] = $stat['review_text'];
+		}
+
+		foreach ( $insertreviews as $stat ) {
+			$insertnum    = $wpdb->insert( $table_name, $stat );
+			$totalinsert += (int) $insertnum;
+		}
+
+		// Persist source avg/total for badges.
+		if ( $pageid !== '' ) {
+			$this->updatetotalavgreviews( 'Yelp', $pageid, $source_avg, $source_total, $pagename );
+
+			$crawls = $this->wpyelp_get_crawls();
+			if ( ! isset( $crawls[ $pageid ] ) ) {
+				$crawls[ $pageid ] = array(
+					'pageid'       => $pageid,
+					'businessname' => $pagename,
+					'url'          => $listedurl,
+				);
+			}
+			$crawls[ $pageid ]['avg']           = $source_avg;
+			$crawls[ $pageid ]['total']         = $source_total;
+			$crawls[ $pageid ]['businessname']  = $pagename;
+			$crawls[ $pageid ]['url']           = $listedurl;
+			$crawls[ $pageid ]['last_download'] = time();
+			$this->wpyelp_save_crawls( $crawls );
+		}
+
+		$numreturned      = count( $all_reviews );
+		$result['ackmsg'] = sprintf(
+			/* translators: 1: reviews found, 2: new reviews inserted */
+			__( '%1$d reviews found. %2$d new reviews downloaded. Check the Review List page.', 'wp-yelp-reviews' ),
+			$numreturned,
+			$totalinsert
+		);
+		$this->errormsg = $result['ackmsg'];
+
+		return $result;
+	}
+
+	/**
+	 * Sanitize a JSON-encoded array of media URLs from the remote crawling
+	 * service before it is stored or re-encoded.
+	 *
+	 * @param string $json Raw JSON string of URLs.
+	 * @return string Re-encoded JSON of sanitized URLs, or '' if invalid.
+	 */
+	private function wprevpro_sanitize_media_urls_json( $json ) {
+		$decoded = json_decode( $json, true );
+		if ( ! is_array( $decoded ) ) {
+			return '';
+		}
+
+		$safe = array();
+		foreach ( $decoded as $url ) {
+			if ( is_string( $url ) && $url !== '' ) {
+				$safe[] = esc_url_raw( $url );
+			}
+		}
+
+		return wp_json_encode( $safe );
+	}
+
+	/**
+	 * Store source avg/total for badges (option + averages table).
+	 *
+	 * @param string $type     Review type.
+	 * @param string $pageid   Page id.
+	 * @param string $avg      Source average from crawler.
+	 * @param string $total    Source total from crawler.
+	 * @param string $pagename Business name.
+	 */
+	public function updatetotalavgreviews( $type, $pageid, $avg, $total, $pagename = '' ) {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'wpyelp_reviews';
+		$avg        = str_replace( ',', '.', (string) $avg );
+		$option     = 'wpyelp_total_avg_reviews';
+
+		$wppro_total_avg_reviews_array = get_option( $option );
+		if ( $wppro_total_avg_reviews_array ) {
+			$wppro_total_avg_reviews_array = json_decode( $wppro_total_avg_reviews_array, true );
+		}
+		if ( ! is_array( $wppro_total_avg_reviews_array ) ) {
+			$wppro_total_avg_reviews_array = array();
+		}
+
+		$ratingsarray = array();
+		$fbreviews    = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT rating, type FROM {$table_name} WHERE hide != %s AND pageid = %s",
+				'yes',
+				$pageid
+			)
+		);
+		$pagetype = $type;
+		foreach ( $fbreviews as $fbreview ) {
+			if ( $fbreview->rating > 0 ) {
+				$ratingsarray[] = (float) $fbreview->rating;
+			}
+			if ( ! empty( $fbreview->type ) ) {
+				$pagetype = $fbreview->type;
+			}
+		}
+
+		$avgdb   = 0;
+		$totaldb = 0;
+		if ( count( $ratingsarray ) > 0 ) {
+			$avgdb   = round( array_sum( $ratingsarray ) / count( $ratingsarray ), 3 );
+			$totaldb = count( $ratingsarray );
+		}
+
+		if ( ! isset( $wppro_total_avg_reviews_array[ $pageid ] ) ) {
+			$wppro_total_avg_reviews_array[ $pageid ] = array();
+		}
+		$wppro_total_avg_reviews_array[ $pageid ]['total_indb'] = $totaldb;
+		$wppro_total_avg_reviews_array[ $pageid ]['avg_indb']   = $avgdb;
+		if ( floatval( $avg ) > 0 ) {
+			$wppro_total_avg_reviews_array[ $pageid ]['avg'] = round( floatval( $avg ), 3 );
+		}
+		if ( intval( $total ) > 0 ) {
+			$wppro_total_avg_reviews_array[ $pageid ]['total'] = intval( $total );
+		}
+
+		update_option( $option, wp_json_encode( $wppro_total_avg_reviews_array, JSON_FORCE_OBJECT ) );
+
+		$valuearray = array(
+			'btp_id'     => $pageid,
+			'btp_name'   => $pagename,
+			'pagetype'   => $pagetype,
+			'total'      => isset( $wppro_total_avg_reviews_array[ $pageid ]['total'] ) ? $wppro_total_avg_reviews_array[ $pageid ]['total'] : '',
+			'total_indb' => $totaldb,
+			'avg'        => isset( $wppro_total_avg_reviews_array[ $pageid ]['avg'] ) ? $wppro_total_avg_reviews_array[ $pageid ]['avg'] : '',
+			'avg_indb'   => $avgdb,
+			'numr1'      => '',
+			'numr2'      => '',
+			'numr3'      => '',
+			'numr4'      => '',
+			'numr5'      => '',
+		);
+		$this->updatetotalavgreviewstableinsert( 'page', $valuearray );
+	}
+
+	/**
+	 * Insert/replace a row in wpyelp_total_averages.
+	 *
+	 * @param string $btp_type   page|template|badge.
+	 * @param array  $valuearray Row values.
+	 */
+	public function updatetotalavgreviewstableinsert( $btp_type, $valuearray ) {
+		global $wpdb;
+		$table_name_totalavg = $wpdb->prefix . 'wpyelp_total_averages';
+		$data                = array(
+			'btp_id'     => isset( $valuearray['btp_id'] ) ? $valuearray['btp_id'] : '',
+			'btp_name'   => isset( $valuearray['btp_name'] ) ? $valuearray['btp_name'] : '',
+			'btp_type'   => $btp_type,
+			'pagetype'   => isset( $valuearray['pagetype'] ) ? $valuearray['pagetype'] : '',
+			'total_indb' => isset( $valuearray['total_indb'] ) ? (string) $valuearray['total_indb'] : '',
+			'total'      => isset( $valuearray['total'] ) ? (string) $valuearray['total'] : '',
+			'avg_indb'   => isset( $valuearray['avg_indb'] ) ? (string) $valuearray['avg_indb'] : '',
+			'avg'        => isset( $valuearray['avg'] ) ? (string) $valuearray['avg'] : '',
+			'numr1'      => isset( $valuearray['numr1'] ) ? (string) $valuearray['numr1'] : '',
+			'numr2'      => isset( $valuearray['numr2'] ) ? (string) $valuearray['numr2'] : '',
+			'numr3'      => isset( $valuearray['numr3'] ) ? (string) $valuearray['numr3'] : '',
+			'numr4'      => isset( $valuearray['numr4'] ) ? (string) $valuearray['numr4'] : '',
+			'numr5'      => isset( $valuearray['numr5'] ) ? (string) $valuearray['numr5'] : '',
+		);
+		$format = array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
+		$wpdb->replace( $table_name_totalavg, $data, $format );
+	}
+
+	/**
+	 * Call the remote crawling service (crawl.ljapps.com) for one Yelp page and
+	 * return an array of normalized, sanitized reviews plus avg/total.
+	 *
+	 * @param string $listedurl Yelp business URL.
+	 * @param int    $pagenum   Page number (1-based).
+	 * @param string $iscron    'yes' for cron, 'no' for manual.
+	 * @return array
+	 */
+	public function wprpfree_getapps_getrevs_page_yelp( $listedurl, $pagenum, $iscron ) {
+		$result['ack'] = 'success';
+		set_time_limit( 150 );
+
+		$reviewsarray = array();
+
+		if ( filter_var( $listedurl, FILTER_VALIDATE_URL ) ) {
+
+			$stripvariableurl = stripslashes( $listedurl );
+			$listedurl        = strtok( $stripvariableurl, '?' );
+
+			if ( isset( $_SERVER['SERVER_ADDR'] ) && $_SERVER['SERVER_ADDR'] != '' ) {
+				$ip_server = $_SERVER['SERVER_ADDR'];
+			} else {
+				$ip_server = urlencode( get_site_url() );
+			}
+			$siteurl = urlencode( get_site_url() );
+
+			$tempurlval = 'https://crawl.ljapps.com/crawlrevs?rip=' . $ip_server . '&surl=' . $siteurl . '&scrapeurl=' . urlencode( $listedurl ) . '&stype=yelp&nhful=&locationtype=&scrapequery=&tempbusinessname=&pagenum=' . $pagenum . '&nextpageurl=&iscron=' . $iscron . '&sfp=free&nobot=1';
+
+			$serverresponse = '';
+			$args           = array(
+				'timeout' => 120,
+				'headers' => array(
+					'Content-Type' => ' application/json',
+					'Accept'       => 'application/json',
+				),
+			);
+			$response = wp_remote_get( $tempurlval, $args );
+			if ( is_array( $response ) && ! is_wp_error( $response ) ) {
+				$serverresponse = $response['body'];
+			} else {
+				$results['ack']         = 'error';
+				$results['ackmsg']      = 'Error 0001a: trouble contacting crawling server with remote_get. Please try again or contact support. ' . $response->get_error_message();
+				$results['crawl_debug'] = array(
+					'request_url' => $tempurlval,
+					'raw'         => '',
+					'error'       => is_wp_error( $response ) ? $response->get_error_message() : 'unknown',
+				);
+				echo wp_json_encode( $results );
+				die();
+			}
+
+			// Check for block or timeout; fall back to the backup crawl server.
+			if ( strpos( $serverresponse, 'Please wait while your request is being verified' ) !== false || ! isset( $serverresponse ) || $serverresponse == '' || strpos( $serverresponse, 'Access denied by Imunify360 bot-protection.' ) !== false || strpos( $serverresponse, '415 Unsupported Media Type' ) !== false ) {
+				$response = wp_remote_get( 'https://ocean.ljapps.com/crawlrevs.php?rip=' . $ip_server . '&surl=' . $siteurl . '&scrapeurl=' . urlencode( $listedurl ) . '&stype=yelp&nhful=&locationtype=&scrapequery=&tempbusinessname=&pagenum=' . $pagenum . '&nextpageurl=&iscron=' . $iscron . '&sfp=free&nobot=1', array( 'timeout' => 150 ) );
+				if ( is_array( $response ) && ! is_wp_error( $response ) ) {
+					$serverresponse = $response['body'];
+				}
+			}
+
+			$serverresponsearray    = json_decode( $serverresponse, true );
+			$this->last_crawl_debug = array(
+				'request_url' => $tempurlval,
+				'iscron'      => $iscron,
+				'raw'         => $serverresponse,
+				'parsed'      => $serverresponsearray,
+			);
+
+			if ( $serverresponse == '' || ! is_array( $serverresponsearray ) ) {
+				$results['ack']         = 'error';
+				$results['ackmsg']      = 'Error 0001: trouble contacting crawling server. Please try again or contact support.';
+				$results['crawl_debug'] = $this->last_crawl_debug;
+				echo wp_json_encode( $results );
+				die();
+			}
+			if ( isset( $serverresponsearray['ack'] ) && $serverresponsearray['ack'] == 'error' ) {
+				$results['ack']         = 'error';
+				$results['ackmsg']      = 'Error 0002: ' . $serverresponsearray['ackmessage'];
+				$results['crawl_debug'] = $this->last_crawl_debug;
+				echo wp_json_encode( $results );
+				die();
+			}
+			if ( ! isset( $serverresponsearray['result'] ) || ! is_array( $serverresponsearray['result'] ) ) {
+				$results['ack']         = 'error';
+				$results['ackmsg']      = 'Error 0002b: trouble finding reviews. Contact support with this error code and the URL you are using.';
+				$results['crawl_debug'] = $this->last_crawl_debug;
+				echo wp_json_encode( $results );
+				die();
+			}
+			if ( isset( $serverresponsearray['result']['ack'] ) && $serverresponsearray['result']['ack'] == 'error' ) {
+				$results['ack']         = 'error';
+				$results['ackmsg']      = 'Error 0003: Please try again. ' . $serverresponsearray['result']['ackmsg'];
+				$results['crawl_debug'] = $this->last_crawl_debug;
+				echo wp_json_encode( $results );
+				die();
+			}
+
+			$crawlerresultarray = $serverresponsearray['result'];
+
+			$result['total'] = isset( $crawlerresultarray['total'] ) ? $crawlerresultarray['total'] : '';
+			$result['avg']   = isset( $crawlerresultarray['avg'] ) ? $crawlerresultarray['avg'] : '';
+			if ( isset( $crawlerresultarray['callurl'] ) ) {
+				$result['callurl'] = $crawlerresultarray['callurl'];
+			}
+
+			$crawlerreviewsarray = array();
+			if ( isset( $crawlerresultarray['reviews'] ) && is_array( $crawlerresultarray['reviews'] ) ) {
+				$crawlerreviewsarray = $crawlerresultarray['reviews'];
+			}
+
+			foreach ( $crawlerreviewsarray as $review ) {
+				$user_name = isset( $review['user_name'] ) ? trim( $review['user_name'] ) : '';
+				if ( $user_name === '' ) {
+					continue;
+				}
+
+				$tempownerres = '';
+				if ( isset( $review['owner_response'] ) && $review['owner_response'] != '' ) {
+					$tempownerres = sanitize_textarea_field( $review['owner_response'] );
+				}
+				$templocation = '';
+				if ( isset( $review['location'] ) && $review['location'] != '' ) {
+					$templocation = sanitize_text_field( $review['location'] );
+				}
+				$tempmediaurlsarrayjson = '';
+				if ( isset( $review['mediaurlsarrayjson'] ) && $review['mediaurlsarrayjson'] != '' ) {
+					$tempmediaurlsarrayjson = $this->wprevpro_sanitize_media_urls_json( $review['mediaurlsarrayjson'] );
+				}
+
+				// Untrusted data from the remote crawling service: sanitize every field.
+				$reviewsarray[] = array(
+					'reviewer_name'      => sanitize_text_field( $user_name ),
+					'userpic'            => isset( $review['userimage'] ) ? esc_url_raw( $review['userimage'] ) : '',
+					'rating'             => isset( $review['rating'] ) ? (int) $review['rating'] : 0,
+					'updated'            => isset( $review['datesubmitted'] ) ? sanitize_text_field( $review['datesubmitted'] ) : '',
+					'review_text'        => isset( $review['rtext'] ) ? sanitize_textarea_field( $review['rtext'] ) : '',
+					'from_url'           => $listedurl,
+					'from_url_review'    => isset( $review['from_url_review'] ) ? esc_url_raw( $review['from_url_review'] ) : '',
+					'location'           => $templocation,
+					'mediaurlsarrayjson' => $tempmediaurlsarrayjson,
+					'owner_response'     => $tempownerres,
+				);
+			}
+
+			$result['reviews'] = $reviewsarray;
+		}
+
+		return $result;
+	}
 	
 	//for using curl instead of fopen
 	private function file_get_contents_curl($url) {
@@ -1698,6 +2599,224 @@ class WP_Yelp_Review_Admin {
 		$submenu[$menu_slug][] = array('<div id="wprev-66040">Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/');
 		}
 	}
-    
+
+	/**
+	 * Ajax: return the rendered template HTML for the live preview.
+	 *
+	 * @since 9.0
+	 */
+	public function wpyelp_previewtemplate_ajax() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+			return;
+		}
+
+		check_ajax_referer( 'randomnoncestring', 'wpyelp_nonce' );
+
+		$tid = isset( $_POST['tid'] ) ? absint( $_POST['tid'] ) : 0;
+
+		$returnarray = $this->wpyelp_previewtemplate_ajax_get( $tid );
+		echo wp_json_encode( $returnarray );
+		die();
+	}
+
+	/**
+	 * Build preview HTML for a template id using the public shortcode renderer.
+	 *
+	 * @since 9.0
+	 * @param int $tid Template id.
+	 * @return array
+	 */
+	public function wpyelp_previewtemplate_ajax_get( $tid ) {
+		$atts = array( 'tid' => absint( $tid ) );
+		require_once plugin_dir_path( __DIR__ ) . 'public/class-wp-yelp-review-slider-public.php';
+		$plugin_public_class = new WP_Yelp_Review_Public( $this->_token, $this->version );
+		$templatehtml        = $plugin_public_class->wpyelp_usetemplate_func( $atts, null );
+
+		return array(
+			'tid'          => absint( $tid ),
+			'ack'          => 'success',
+			'templatehtml' => $templatehtml,
+		);
+	}
+
+	/**
+	 * Ajax: save (insert/update) a review template then return its preview HTML.
+	 *
+	 * Mirrors the page-POST save logic in admin/partials/templates_posts.php so
+	 * the live preview reflects exactly what will be stored.
+	 *
+	 * @since 9.0
+	 */
+	public function wpyelp_savetemplate_ajax() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+			return;
+		}
+
+		check_ajax_referer( 'randomnoncestring', 'wpyelp_nonce' );
+
+		$formdata  = isset( $_POST['data'] ) ? stripslashes( $_POST['data'] ) : '';
+		$formarray = json_decode( $formdata, true );
+		if ( ! is_array( $formarray ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmessage' => 'Invalid form data.' ) );
+			die();
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'wpyelp_post_templates';
+
+		$get = function( $key, $default = '' ) use ( $formarray ) {
+			return isset( $formarray[ $key ] ) ? $formarray[ $key ] : $default;
+		};
+
+		$t_id             = sanitize_text_field( $get( 'edittid' ) );
+		$title            = sanitize_text_field( $get( 'wpyelp_template_title' ) );
+		$template_type    = sanitize_text_field( $get( 'wpyelp_template_type', 'post' ) );
+		$style            = sanitize_text_field( $get( 'wpyelp_template_style', '1' ) );
+		$display_num      = sanitize_text_field( $get( 'wpyelp_t_display_num', '3' ) );
+		$display_num_rows = sanitize_text_field( $get( 'wpyelp_t_display_num_rows', '1' ) );
+		$display_order    = sanitize_text_field( $get( 'wpyelp_t_display_order', 'newest' ) );
+		$hide_no_text     = sanitize_text_field( $get( 'wpyelp_t_hidenotext', 'no' ) );
+		$template_css     = sanitize_text_field( $get( 'wpyelp_template_css' ) );
+		$createslider     = sanitize_text_field( $get( 'wpyelp_t_createslider', 'yes' ) );
+		$numslides        = sanitize_text_field( $get( 'wpyelp_t_numslides', '3' ) );
+		$read_more        = sanitize_text_field( $get( 'wprevpro_t_read_more', 'no' ) );
+		$read_more_text   = sanitize_text_field( $get( 'wprevpro_t_read_more_text', 'read more' ) );
+		$min_rating       = sanitize_text_field( $get( 'wpyelp_t_min_rating', '1' ) );
+		$rpage            = sanitize_text_field( $get( 'wpyelp_t_filtersource' ) );
+
+		//template misc (style + badge settings, stored as JSON)
+		$templatemiscarray = array();
+		$templatemiscarray['showstars'] = sanitize_text_field( $get( 'wpyelp_template_misc_showstars' ) );
+		$templatemiscarray['showdate']  = sanitize_text_field( $get( 'wpyelp_template_misc_showdate' ) );
+		$templatemiscarray['bgcolor1']  = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wpyelp_template_misc_bgcolor1' ) );
+		$templatemiscarray['bgcolor2']  = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wpyelp_template_misc_bgcolor2' ) );
+		$templatemiscarray['tcolor1']   = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wpyelp_template_misc_tcolor1' ) );
+		$templatemiscarray['tcolor2']   = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wpyelp_template_misc_tcolor2' ) );
+		$templatemiscarray['tcolor3']   = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wpyelp_template_misc_tcolor3' ) );
+		$templatemiscarray['bradius']   = sanitize_text_field( $get( 'wpyelp_template_misc_bradius' ) );
+		$templatemiscarray['showmedia'] = sanitize_text_field( $get( 'wpyelp_t_showmedia', 'yes' ) );
+
+		// Style-tab options.
+		$templatemiscarray['verified']       = sanitize_text_field( $get( 'wpyelp_template_misc_verified', 'no' ) );
+		$templatemiscarray['lastnameformat'] = sanitize_text_field( $get( 'wpyelp_template_misc_lastname', 'show' ) );
+		$templatemiscarray['avataropt']      = sanitize_text_field( $get( 'wpyelp_template_misc_avataropt', 'show' ) );
+		$templatemiscarray['showicon']       = sanitize_text_field( $get( 'wpyelp_template_misc_showicon', 'lin' ) );
+		$ajax_tfont1 = absint( $get( 'wpyelp_template_misc_tfont1', 0 ) );
+		$ajax_tfont2 = absint( $get( 'wpyelp_template_misc_tfont2', 0 ) );
+		$templatemiscarray['tfont1'] = $ajax_tfont1 > 0 ? (string) $ajax_tfont1 : '';
+		$templatemiscarray['tfont2'] = $ajax_tfont2 > 0 ? (string) $ajax_tfont2 : '';
+
+		// General-tab options (slider + read more).
+		$templatemiscarray['slidespeed']         = sanitize_text_field( $get( 'wpyelp_t_slidespeed', '1' ) );
+		$templatemiscarray['slideautodelay']     = sanitize_text_field( $get( 'wpyelp_t_slideautodelay', '5' ) );
+		$templatemiscarray['sliderautoplay']     = sanitize_text_field( $get( 'wpyelp_sliderautoplay' ) );
+		$templatemiscarray['sliderhideprevnext'] = sanitize_text_field( $get( 'wpyelp_sliderhideprevnext' ) );
+		$templatemiscarray['sliderhidedots']     = sanitize_text_field( $get( 'wpyelp_sliderhidedots' ) );
+		$templatemiscarray['sliderfixedheight']  = sanitize_text_field( $get( 'wpyelp_sliderfixedheight' ) );
+		$templatemiscarray['slidermobileview']   = sanitize_text_field( $get( 'wpyelp_slidermobileview' ) );
+		$templatemiscarray['review_same_height'] = sanitize_text_field( $get( 'wpyelp_t_review_same_height', 'no' ) );
+		$templatemiscarray['read_more_num']      = sanitize_text_field( $get( 'wprevpro_t_read_more_num', '30' ) );
+		$templatemiscarray['read_more_color']    = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wprevpro_t_read_more_color' ) );
+
+		// Badge options.
+		$templatemiscarray['blocation'] = sanitize_text_field( $get( 'wpyelp_t_blocation' ) );
+		$templatemiscarray['bname']     = sanitize_text_field( $get( 'wpyelp_t_bname' ) );
+		$templatemiscarray['bnameurl']  = esc_url_raw( $get( 'wpyelp_t_bnameurl' ) );
+		$templatemiscarray['bimgurl']   = esc_url_raw( $get( 'wpyelp_t_bimgurl' ) );
+		$templatemiscarray['bshape']    = sanitize_text_field( $get( 'wpyelp_t_bshape' ) );
+		$templatemiscarray['bimgsize']  = sanitize_text_field( $get( 'wpyelp_t_bimgsize', '50' ) );
+		$templatemiscarray['bbtnurl']   = esc_url_raw( $get( 'wpyelp_t_bbtnurl' ) );
+		$templatemiscarray['bbradius']  = sanitize_text_field( $get( 'wpyelp_t_bbradius', '0' ) );
+		$templatemiscarray['bbwidth']   = sanitize_text_field( $get( 'wpyelp_t_bbwidth', '0' ) );
+		$templatemiscarray['bbtncolor'] = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wpyelp_t_bbtncolor', '#d32323' ) );
+		$templatemiscarray['bbkcolor']  = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wpyelp_t_bbkcolor', '#ffffff' ) );
+		$templatemiscarray['bbcolor']   = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wpyelp_t_bbcolor', '#eeeeee' ) );
+		$templatemiscarray['bdropsh']   = sanitize_text_field( $get( 'wpyelp_t_bdropsh' ) );
+		$templatemiscarray['bcenter']   = sanitize_text_field( $get( 'wpyelp_t_bcenter' ) );
+		$templatemiscarray['bhname']    = sanitize_text_field( $get( 'wpyelp_t_bhname' ) );
+		$templatemiscarray['bhphoto']   = sanitize_text_field( $get( 'wpyelp_t_bhphoto' ) );
+		$templatemiscarray['bhbased']   = sanitize_text_field( $get( 'wpyelp_t_bhbased' ) );
+		$templatemiscarray['bhbtn']     = sanitize_text_field( $get( 'wpyelp_t_bhbtn' ) );
+		$templatemiscarray['bhpow']     = sanitize_text_field( $get( 'wpyelp_t_bhpow' ) );
+		$templatemiscarray['bhreviews'] = sanitize_text_field( $get( 'wpyelp_t_bhreviews' ) );
+		$templatemiscarray['bobasedon'] = sanitize_text_field( $get( 'wpyelp_t_bobasedon' ) );
+		$templatemiscarray['borevus']   = sanitize_text_field( $get( 'wpyelp_t_borevus' ) );
+
+		$templatemiscjson = wp_json_encode( $templatemiscarray );
+		$timenow          = time();
+
+		$data = array(
+			'title'              => $title,
+			'template_type'      => $template_type,
+			'style'              => $style,
+			'created_time_stamp' => $timenow,
+			'display_num'        => $display_num,
+			'display_num_rows'   => $display_num_rows,
+			'display_order'      => $display_order,
+			'hide_no_text'       => $hide_no_text,
+			'template_css'       => $template_css,
+			'min_rating'         => $min_rating,
+			'min_words'          => '',
+			'max_words'          => '',
+			'rtype'              => '',
+			'rpage'              => $rpage,
+			'createslider'       => $createslider,
+			'numslides'          => $numslides,
+			'sliderautoplay'     => '',
+			'sliderdirection'    => '',
+			'sliderarrows'       => '',
+			'sliderdots'         => '',
+			'sliderdelay'        => '',
+			'sliderheight'       => '',
+			'showreviewsbyid'    => '',
+			'template_misc'      => $templatemiscjson,
+			'read_more'          => $read_more,
+			'read_more_text'     => $read_more_text,
+		);
+		$format = array(
+			'%s', '%s', '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%d',
+			'%d', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s',
+			'%d', '%s', '%s', '%s', '%s', '%s',
+		);
+
+		$returnarray = array(
+			'iu'         => '',
+			'ack'        => '',
+			'ackmessage' => '',
+			't_id'       => '',
+		);
+
+		if ( $t_id === '' ) {
+			$returnarray['iu'] = 'insert';
+			$inserttemplate    = $wpdb->insert( $table_name, $data, $format );
+			$t_id              = $wpdb->insert_id;
+			if ( ! $inserttemplate ) {
+				$returnarray['ack']        = 'error';
+				$returnarray['ackmessage'] = __( 'Unable to update. Try refreshing the page.', 'wp-yelp-review-slider' );
+			} else {
+				$returnarray['ack']        = 'success';
+				$returnarray['ackmessage'] = __( 'Template Saved!', 'wp-yelp-review-slider' );
+			}
+		} else {
+			$returnarray['iu'] = 'update';
+			$updatetempquery   = $wpdb->update( $table_name, $data, array( 'id' => absint( $t_id ) ), $format, array( '%d' ) );
+			if ( false === $updatetempquery ) {
+				$returnarray['ack']        = 'error';
+				$returnarray['ackmessage'] = __( 'Unable to update. Try refreshing the page.', 'wp-yelp-review-slider' );
+			} else {
+				$returnarray['ack']        = 'success';
+				$returnarray['ackmessage'] = __( 'Template Updated!', 'wp-yelp-review-slider' );
+			}
+		}
+
+		$returnarray['t_id']         = absint( $t_id );
+		$returnpreview               = $this->wpyelp_previewtemplate_ajax_get( absint( $t_id ) );
+		$returnarray['templatehtml'] = $returnpreview['templatehtml'];
+
+		echo wp_json_encode( $returnarray );
+		die();
+	}
 
 }
