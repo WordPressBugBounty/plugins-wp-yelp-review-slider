@@ -88,7 +88,7 @@ class WP_Yelp_Review_Admin {
 		 */
 		//only load for this plugin admin pages
 		if(isset($_GET['page'])){
-			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro" || $_GET['page']=="wp_yelp-opt" || $_GET['page']=="wp_yelp-welcome"){
+			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro" || $_GET['page']=="wp_yelp-opt" || $_GET['page']=="wp_yelp-welcome" ){
 
 			wp_register_style( 'Font_Awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css' );
 			wp_enqueue_style('Font_Awesome');
@@ -259,22 +259,53 @@ class WP_Yelp_Review_Admin {
 		$submenu_slug = 'wp_yelp-templates_posts';
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_templates_posts'));
 		
-		// Opt-in page (hidden from menu; reachable via direct URL)
-		$submenu_page_title = 'WP Yelp Reviews : Opt';
-		$submenu_title = 'Opt';
+		// Email opt-in (also used for first-visit redirect)
+		$submenu_page_title = 'WP Yelp Reviews : Email Opt-In';
+		$submenu_title = 'Email Opt-In';
 		$submenu_slug = 'wp_yelp-opt';
-		add_submenu_page(null, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_opt'));
-		
-		
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_yelp_opt' ) );
+
+
 		// Now add the submenu page for the reviews templates
 		//$submenu_page_title = 'WP FB Reviews : Upgrade';
 		//$submenu_title = 'Get Pro';
 		//$submenu_slug = 'wp_yelp-get_pro';
 		//add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_fb_getpro'));
-	
+
 
 	}
-	
+
+	/**
+	 * First visit to any plugin admin page: send users to the Brevo email opt-in
+	 * until they Allow, Opt Out, or Skip. (Restores gate removed in 8.4.)
+	 *
+	 * @since 9.1
+	 */
+	public function wpyelp_maybe_redirect_optin() {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( empty( $_GET['page'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+		$page = sanitize_text_field( wp_unslash( $_GET['page'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$plugin_pages = array(
+			'wp_yelp-welcome',
+			'wp_yelp-reviews',
+			'wp_yelp-get_yelp',
+			'wp_yelp-templates_posts',
+			'wp_yelp-get_pro',
+		);
+		if ( ! in_array( $page, $plugin_pages, true ) ) {
+			return;
+		}
+		$optin = get_option( 'wp_yelp_optin', 'blank' );
+		if ( in_array( $optin, array( 'blank', '' ), true ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp_yelp-opt' ) );
+			exit;
+		}
+	}
+
 	public function wp_yelp_opt() {
 		require_once plugin_dir_path( __FILE__ ) . '/partials/opt.php';
 	}

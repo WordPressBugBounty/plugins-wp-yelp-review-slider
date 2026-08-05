@@ -4,21 +4,17 @@ Donate link: http://ljapps.com/
 Tags: Yelp, reviews, slider, testimonials, yelp
 Requires at least: 3.0.1
 Tested up to: 7.0
-Stable tag: 9.0
+Stable tag: 9.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Create a Yelp review slider! Allows you to easily display your Yelp business reviews in your Posts, Pages, and Widget areas.
+Create a Yelp review slider! Easily display your Yelp business reviews in your Posts, Pages, and Widget areas. Download multiple locations, store reviews locally for fast loading, and show badges, photos, and templates.
 
 == Description ==
 
 Show off your Yelp reviews on your WordPress site! Check the video below to see how you can get Yelp reviews displaying in under 2 minutes!
 
 A great way to build user confidence and increase your page SEO! You work hard for your 5 star Yelp reviews, why not easily display them on your WordPress site? Each review has the Yelp logo so that your customers can see the reviews are coming from Yelp. Let's face it, no one really trusts reviews unless they have social proof. Having Yelp reviews on your site builds user confidence and helps you make more sales!
-
-Here's a quick video adding Yelp reviews in under 2 minutes.
-
-[youtube https://youtu.be/6z7y6iYF8C0]
 
 If you have a restaurant you know how important Yelp reviews can be. Yelp may have started with just restaurants, but now they have all sorts of businesses. If you have a great rating on Yelp, then it's a great idea to display the reviews on your site. By showing social proof from Yelp you can build customer confidence and increase your sales.
 
@@ -105,6 +101,9 @@ We are always looking for features to add. Just post on the support forum or con
 5. Create as many templates as you like.
 
 == Changelog ==
+= 9.1 =
+* Bug fixes.
+
 = 9.0 =
 * New: Add multiple Yelp business pages and download reviews for each source separately.
 * New: Choose which Yelp business page each review template displays reviews from.
@@ -342,6 +341,9 @@ We are always looking for features to add. Just post on the support forum or con
 * First Version
 
 == Upgrade Notice ==
+
+= 9.1 =
+Bug fixes.
 
 = 2.4 =
 * WordPress V4.9 compatible fix of color picker.
