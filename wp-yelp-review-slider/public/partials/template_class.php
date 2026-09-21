@@ -83,6 +83,43 @@ class WP_Yelp_Template_Functions {
 	}
 
 	/**
+	 * Prepare stored review text for HTML output.
+	 *
+	 * Review text is plain text and may contain HTML entities. Decoding it and
+	 * echoing without escaping reintroduced markup that sanitize_textarea_field()
+	 * left in place (it only strips tags when a literal "<" is present).
+	 *
+	 * @param string $text            Raw review text from the database.
+	 * @param bool   $read_more       Whether to split with a read-more link.
+	 * @param int    $read_more_num   Word count before the split.
+	 * @param string $read_more_label Link label.
+	 * @return string Escaped text plus optional plugin read-more markup.
+	 */
+	public function wprev_format_review_text( $text, $read_more = false, $read_more_num = 30, $read_more_label = 'read more' ) {
+		$text = html_entity_decode( (string) $text, ENT_QUOTES, 'UTF-8' );
+		$text = wp_unslash( $text );
+
+		if ( $read_more ) {
+			$read_more_num = (int) $read_more_num;
+			if ( $read_more_num < 1 ) {
+				$read_more_num = 30;
+			}
+			$pieces     = explode( ' ', $text );
+			$countwords = str_word_count( $text );
+			if ( $countwords > $read_more_num ) {
+				$part1 = array_slice( $pieces, 0, $read_more_num );
+				$part2 = array_slice( $pieces, $read_more_num );
+				return nl2br( esc_html( implode( ' ', $part1 ) ) )
+					. "<a class='wprs_rd_more'>... " . esc_html( $read_more_label ) . "</a><span class='wprs_rd_more_text' style='display:none;'> "
+					. nl2br( esc_html( implode( ' ', $part2 ) ) )
+					. '</span>';
+			}
+		}
+
+		return nl2br( esc_html( $text ) );
+	}
+
+	/**
 	 * Escape an image src that may be https or a data URI.
 	 *
 	 * @param string $url Image URL.

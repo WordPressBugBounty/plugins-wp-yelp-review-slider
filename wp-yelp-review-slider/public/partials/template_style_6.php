@@ -80,23 +80,19 @@ for ( $x = 0; $x < count( $rowarray ); $x++ ) {
 			$site_logo = '<a href="' . esc_url( $burl ) . '" target="_blank" rel="nofollow">' . $logo_img . '</a>';
 		}
 
-		$reviewtext = '';
-		if ( $review->review_text !== '' ) {
-			$reviewtext = nl2br( $review->review_text );
-		}
-
 		if ( ! isset( $currentform[0]->read_more_text ) || $currentform[0]->read_more_text === '' ) {
 			$currentform[0]->read_more_text = 'read more';
 		}
-		if ( isset( $currentform[0]->read_more ) && $currentform[0]->read_more === 'yes' ) {
-			$readmorenum = ( isset( $template_misc_array['read_more_num'] ) && intval( $template_misc_array['read_more_num'] ) > 0 ) ? intval( $template_misc_array['read_more_num'] ) : 30;
-			$pieces      = explode( ' ', $reviewtext );
-			$countwords  = count( $pieces );
-			if ( $countwords > $readmorenum ) {
-				$part1      = array_slice( $pieces, 0, $readmorenum );
-				$part2      = array_slice( $pieces, $readmorenum );
-				$reviewtext = implode( ' ', $part1 ) . "<a class='wprs_rd_more'>... " . esc_html( $currentform[0]->read_more_text ) . "</a><span class='wprs_rd_more_text' style='display:none;'> " . implode( ' ', $part2 ) . '</span>';
-			}
+		$read_more   = ( isset( $currentform[0]->read_more ) && $currentform[0]->read_more === 'yes' );
+		$readmorenum = ( isset( $template_misc_array['read_more_num'] ) && intval( $template_misc_array['read_more_num'] ) > 0 ) ? intval( $template_misc_array['read_more_num'] ) : 30;
+		$reviewtext  = '';
+		if ( $review->review_text !== '' ) {
+			$reviewtext = $templateclass->wprev_format_review_text(
+				$review->review_text,
+				$read_more,
+				$readmorenum,
+				$currentform[0]->read_more_text
+			);
 		}
 
 		if ( $currentform[0]->display_num > 0 ) {
@@ -132,7 +128,7 @@ for ( $x = 0; $x < count( $rowarray ); $x++ ) {
 						</div>
 					</div>
 					<div class="wpproslider_t6_DIV_4">
-						<div class="indrevtxt wpproslider_t6_P_4 wprev_preview_tcolor1_T<?php echo esc_attr( $currentform[0]->style ); ?><?php echo $iswidget ? '_widget' : ''; ?>"><?php echo wp_kses_post( wp_unslash( $reviewtext ) ); ?></div>
+						<div class="indrevtxt wpproslider_t6_P_4 wprev_preview_tcolor1_T<?php echo esc_attr( $currentform[0]->style ); ?><?php echo $iswidget ? '_widget' : ''; ?>"><?php echo $reviewtext; ?></div>
 						<?php echo $media; ?>
 					</div>
 					<div class="wpproslider_t6_DIV_3_logo"><?php echo $site_logo; ?></div>

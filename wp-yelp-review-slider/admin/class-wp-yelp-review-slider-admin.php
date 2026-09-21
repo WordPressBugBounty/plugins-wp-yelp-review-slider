@@ -88,7 +88,20 @@ class WP_Yelp_Review_Admin {
 		 */
 		//only load for this plugin admin pages
 		if(isset($_GET['page'])){
-			if($_GET['page']=="wp_yelp-reviews" || $_GET['page']=="wp_yelp-templates_posts" || $_GET['page']=="wp_yelp-get_yelp" || $_GET['page']=="wp_yelp-get_pro" || $_GET['page']=="wp_yelp-opt" || $_GET['page']=="wp_yelp-welcome" ){
+			$wpyelp_admin_pages = array(
+				'wp_yelp-reviews',
+				'wp_yelp-templates_posts',
+				'wp_yelp-get_yelp',
+				'wp_yelp-get_pro',
+				'wp_yelp-opt',
+				'wp_yelp-welcome',
+				'wp_yelp-analytics',
+				'wp_yelp-badges',
+				'wp_yelp-forms',
+				'wp_yelp-float',
+				'wp_yelp-ai_analysis',
+			);
+			if ( in_array( $_GET['page'], $wpyelp_admin_pages, true ) ) {
 
 			wp_register_style( 'Font_Awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css' );
 			wp_enqueue_style('Font_Awesome');
@@ -96,6 +109,7 @@ class WP_Yelp_Review_Admin {
 			wp_enqueue_style( $this->_token."_wprev_w3", plugin_dir_url( __FILE__ ) . 'css/wprev_w3.css', array(), $this->version, 'all' );
 
 			wp_enqueue_style( $this->_token, plugin_dir_url( __FILE__ ) . 'css/wpyelp_admin.css', array(), $this->version, 'all' );
+			wp_enqueue_style( $this->_token . '_wprev_admin', plugin_dir_url( __FILE__ ) . 'css/wprev_admin.css', array(), $this->version, 'all' );
 			wp_enqueue_style( $this->_token."_wpyelp_w3", plugin_dir_url( __FILE__ ) . 'css/wpyelp_w3.css', array(), $this->version, 'all' );
 			}
 			//load template styles for preview
@@ -107,6 +121,19 @@ class WP_Yelp_Review_Admin {
 				wp_enqueue_style( $this->_token."_unslider_dots", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprs_unslider-dots.css', array(), $this->version, 'all' );
 				//lity for review media lightbox in the template preview
 				wp_enqueue_style( $this->_token."_lity", plugin_dir_url(dirname(__FILE__)) . 'public/css/lity.min.css', array(), $this->version, 'all' );
+			}
+
+			if ( $_GET['page'] === 'wp_yelp-analytics' ) {
+				wp_enqueue_style( $this->_token . '_style6', plugin_dir_url( dirname( __FILE__ ) ) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
+				wp_enqueue_style( 'chart-min', plugin_dir_url( __FILE__ ) . 'css/Chart.min.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_daterangepicker', plugin_dir_url( __FILE__ ) . 'css/daterangepicker.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_select2', plugin_dir_url( __FILE__ ) . 'css/select2.min.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_jqcloud', plugin_dir_url( __FILE__ ) . 'css/jqcloud.css', array(), $this->version, 'all' );
+			}
+
+			if ( $_GET['page'] === 'wp_yelp-ai_analysis' ) {
+				wp_enqueue_style( 'chart-min', plugin_dir_url( __FILE__ ) . 'css/Chart.min.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_style6', plugin_dir_url( dirname( __FILE__ ) ) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
 			}
 		}
 
@@ -224,6 +251,90 @@ class WP_Yelp_Review_Admin {
 				wp_enqueue_script( 'wp-color-picker-alpha', plugin_dir_url( __FILE__ ) . 'js/wpyelp-wp-color-picker-alpha.js', array( 'wp-color-picker' ), '2.1.2', false );
 
 			}
+
+			if ( $_GET['page'] === 'wp_yelp-analytics' ) {
+				global $wpdb;
+				$reviews_table_name = $wpdb->prefix . 'wpyelp_reviews';
+				$typearray          = $wpdb->get_col( "SELECT type FROM {$reviews_table_name} WHERE LOWER(type) = 'yelp' GROUP BY type" );
+
+				wp_enqueue_script( 'wprevpro_analytics_page-js', plugin_dir_url( __FILE__ ) . 'js/wprevpro_analytics_page.js', array( 'jquery' ), $this->version, false );
+				wp_localize_script(
+					'wprevpro_analytics_page-js',
+					'adminjs_script_vars',
+					array(
+						'wpfb_nonce'            => wp_create_nonce( 'randomnoncestring' ),
+						'ajax_url'              => admin_url( 'admin-ajax.php' ),
+						'gmt_offset_minutes'    => (int) ( get_option( 'gmt_offset' ) * 60 ),
+						'pluginsUrl'            => wprev_yelp_plugin_url,
+						'globalwprevtypearray'  => wp_json_encode( $typearray ),
+						'customSourcesIconUrls' => wp_json_encode( array() ),
+						'msg1'                  => esc_html__( 'Location Filter', 'wp-yelp-review-slider' ),
+						'msg2'                  => esc_html__( 'Type Filter', 'wp-yelp-review-slider' ),
+						'd1'                    => esc_html__( 'Today', 'wp-yelp-review-slider' ),
+						'd2'                    => esc_html__( 'Yesterday', 'wp-yelp-review-slider' ),
+						'd3'                    => esc_html__( 'Last 7 Days', 'wp-yelp-review-slider' ),
+						'd4'                    => esc_html__( 'Last 30 Days', 'wp-yelp-review-slider' ),
+						'd5'                    => esc_html__( 'Last 60 Days', 'wp-yelp-review-slider' ),
+						'd6'                    => esc_html__( 'Last 90 Days', 'wp-yelp-review-slider' ),
+						'd7'                    => esc_html__( 'This Month', 'wp-yelp-review-slider' ),
+						'd8'                    => esc_html__( 'Last Month', 'wp-yelp-review-slider' ),
+						'd9'                    => esc_html__( 'This Year', 'wp-yelp-review-slider' ),
+						'd10'                   => esc_html__( 'Last Year', 'wp-yelp-review-slider' ),
+						'd11'                   => esc_html__( 'All Time', 'wp-yelp-review-slider' ),
+						'msg3'                  => esc_html__( 'Error accessing language function via ajax.', 'wp-yelp-review-slider' ),
+						'msg4'                  => esc_html__( 'Ratings', 'wp-yelp-review-slider' ),
+						'msg5'                  => esc_html__( 'Error returning json object. Please try again or contact us and copy and send us the following:', 'wp-yelp-review-slider' ),
+						'msg6'                  => esc_html__( 'Overall Ratings (Old >> New)', 'wp-yelp-review-slider' ),
+						'msg7'                  => esc_html__( 'Review Response:', 'wp-yelp-review-slider' ),
+						'msg8'                  => esc_html__( 'Type', 'wp-yelp-review-slider' ),
+						'msg9'                  => esc_html__( 'Page', 'wp-yelp-review-slider' ),
+						'msg10'                 => esc_html__( 'Source URL', 'wp-yelp-review-slider' ),
+						'msg11'                 => esc_html__( 'Reviewer URL', 'wp-yelp-review-slider' ),
+						'msg12'                 => esc_html__( 'Review Details', 'wp-yelp-review-slider' ),
+					)
+				);
+
+				wp_register_script( $this->_token . 'chart-js', plugin_dir_url( __FILE__ ) . 'js/Chart.bundle.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . 'chart-js' );
+				wp_register_script( $this->_token . 'chart-js-trendline', plugin_dir_url( __FILE__ ) . 'js/chartjs-plugin-trendline.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . 'chart-js-trendline' );
+				wp_register_script( $this->_token . '_moment', plugin_dir_url( __FILE__ ) . 'js/moment.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . '_moment' );
+				wp_register_script( $this->_token . '_daterangepicker', plugin_dir_url( __FILE__ ) . 'js/daterangepicker.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . '_daterangepicker' );
+				wp_register_script( $this->_token . '_select2', plugin_dir_url( __FILE__ ) . 'js/select2.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . '_select2' );
+				wp_register_script( $this->_token . '_jqcloud', plugin_dir_url( __FILE__ ) . 'js/jqcloud.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . '_jqcloud' );
+
+				wp_enqueue_script( 'thickbox' );
+				wp_enqueue_style( 'thickbox' );
+			}
+
+			if ( $_GET['page'] === 'wp_yelp-ai_analysis' ) {
+				wp_enqueue_script( 'thickbox' );
+				wp_enqueue_style( 'thickbox' );
+
+				wp_register_script( $this->_token . 'chart-js', plugin_dir_url( __FILE__ ) . 'js/Chart.bundle.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . 'chart-js' );
+
+				wp_enqueue_script(
+					'wprevpro_ai_analysis_page-js',
+					plugin_dir_url( __FILE__ ) . 'js/wprevpro_ai_analysis_page.js',
+					array( 'jquery', 'thickbox', $this->_token . 'chart-js' ),
+					$this->version,
+					false
+				);
+				wp_localize_script(
+					'wprevpro_ai_analysis_page-js',
+					'adminjs_script_vars',
+					array(
+						'wpfb_nonce' => wp_create_nonce( 'randomnoncestring' ),
+						'ajax_url'   => admin_url( 'admin-ajax.php' ),
+						'pluginsUrl' => wprev_yelp_plugin_url,
+					)
+				);
+			}
 		}
 		
 	}
@@ -243,21 +354,46 @@ class WP_Yelp_Review_Admin {
 		
 		$sub_menu_title = 'Welcome';
 		add_submenu_page($menu_slug, $page_title, $sub_menu_title, $capability, $menu_slug, array($this,'wp_yelp_welcome'));
+
+		$submenu_page_title = 'WP Yelp Reviews : Yelp';
+		$submenu_title = 'Get Yelp Reviews';
+		$submenu_slug = 'wp_yelp-get_yelp';
+		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_getyelp'));
 		
 		$submenu_page_title = 'WP Yelp Reviews : Reviews List';
 		$submenu_title = 'Review List';
 		$submenu_slug = 'wp_yelp-reviews';
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_reviews'));
-		
-		$submenu_page_title = 'WP Yelp Reviews : Yelp';
-		$submenu_title = 'Get Yelp Reviews';
-		$submenu_slug = 'wp_yelp-get_yelp';
-		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_getyelp'));
 
 		$submenu_page_title = 'WP Yelp Reviews : Templates';
 		$submenu_title = 'Templates';
 		$submenu_slug = 'wp_yelp-templates_posts';
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_yelp_templates_posts'));
+
+		$submenu_page_title = 'WP Yelp Reviews : Analytics';
+		$submenu_title      = 'Analytics';
+		$submenu_slug       = 'wp_yelp-analytics';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_yelp_analytics' ) );
+
+		$submenu_page_title = 'WP Yelp Reviews : Badges';
+		$submenu_title      = 'Badges';
+		$submenu_slug       = 'wp_yelp-badges';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_yelp_badges' ) );
+
+		$submenu_page_title = 'WP Yelp Reviews : Forms';
+		$submenu_title      = 'Forms';
+		$submenu_slug       = 'wp_yelp-forms';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_yelp_forms' ) );
+
+		$submenu_page_title = 'WP Yelp Reviews : Floats';
+		$submenu_title      = 'Floats';
+		$submenu_slug       = 'wp_yelp-float';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_yelp_float' ) );
+
+		$submenu_page_title = 'WP Yelp Reviews : AI Analysis';
+		$submenu_title      = 'AI Analysis';
+		$submenu_slug       = 'wp_yelp-ai_analysis';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_yelp_ai_analysis' ) );
 		
 		// Email opt-in (also used for first-visit redirect)
 		$submenu_page_title = 'WP Yelp Reviews : Email Opt-In';
@@ -294,6 +430,11 @@ class WP_Yelp_Review_Admin {
 			'wp_yelp-reviews',
 			'wp_yelp-get_yelp',
 			'wp_yelp-templates_posts',
+			'wp_yelp-analytics',
+			'wp_yelp-badges',
+			'wp_yelp-forms',
+			'wp_yelp-float',
+			'wp_yelp-ai_analysis',
 			'wp_yelp-get_pro',
 		);
 		if ( ! in_array( $page, $plugin_pages, true ) ) {
@@ -334,6 +475,21 @@ class WP_Yelp_Review_Admin {
 	}
 	public function wp_yelp_getyelp() {
 		require_once plugin_dir_path( __FILE__ ) . '/partials/get_yelp.php';
+	}
+	public function wp_yelp_analytics() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/analytics.php';
+	}
+	public function wp_yelp_badges() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/badges.php';
+	}
+	public function wp_yelp_forms() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/forms.php';
+	}
+	public function wp_yelp_float() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/float.php';
+	}
+	public function wp_yelp_ai_analysis() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/ai_analysis.php';
 	}
 	public function wp_fb_getpro() {
 		require_once plugin_dir_path( __FILE__ ) . '/partials/get_pro.php';
@@ -2580,10 +2736,11 @@ class WP_Yelp_Review_Admin {
 		foreach ( $reviewrows as $review ) 
 		{
 			$timesince = '';
-			if(strlen($review->review_text)>130){
-				$reviewtext = substr($review->review_text,0,130).'...';
+			$plaintext = wp_unslash( html_entity_decode( (string) $review->review_text, ENT_QUOTES, 'UTF-8' ) );
+			if ( strlen( $plaintext ) > 130 ) {
+				$reviewtext = esc_html( substr( $plaintext, 0, 130 ) ) . '...';
 			} else {
-				$reviewtext = $review->review_text;
+				$reviewtext = esc_html( $plaintext );
 			}
 			
 			$your_date = $review->created_time_stamp;
@@ -2604,14 +2761,14 @@ class WP_Yelp_Review_Admin {
 
 			$imgs_url = plugin_dir_url(__DIR__).'/public/partials/imgs/';
 			$starfile = 'yelp_stars_'.$review->rating.'.png';
-			$starhtml='<img src="'.$imgs_url."".$starfile.'" alt="'.$review->rating.' star rating" class="wprev_dash_stars">';
+			$starhtml='<img src="'.esc_url($imgs_url.$starfile).'" alt="'.esc_attr($review->rating).' star rating" class="wprev_dash_stars">';
 			
 			$avatarhtml = '';
 			if(isset($review->userpic) && $review->userpic!=''){
-				$avatarhtml = '<img alt="" src="'.$review->userpic.'" class="wprev_dash_avatar" height="40" width="40">';
+				$avatarhtml = '<img alt="" src="'.esc_url($review->userpic).'" class="wprev_dash_avatar" height="40" width="40">';
 			}
 			
-			echo '<li><div class="wprev_dash_revdiv">'.$avatarhtml.'<div class="wprev_dash_stars">'.$starhtml.'</div><h4 class="wprev_dash_name">'.$review->reviewer_name.' - <span class="wprev_dash_timeago">'.$daysagohtml.'</span></h4><p class="wprev_dash_text">'.$reviewtext.'</p></div></li>';
+			echo '<li><div class="wprev_dash_revdiv">'.$avatarhtml.'<div class="wprev_dash_stars">'.$starhtml.'</div><h4 class="wprev_dash_name">'.esc_html($review->reviewer_name).' - <span class="wprev_dash_timeago">'.esc_html($daysagohtml).'</span></h4><p class="wprev_dash_text">'.$reviewtext.'</p></div></li>';
 			
 		}
 		echo '</ul>';
@@ -2627,7 +2784,7 @@ class WP_Yelp_Review_Admin {
 
 		if (array_key_exists($menu_slug, $submenu)) {
 		// add the external links to the slug you used when adding the top level menu
-		$submenu[$menu_slug][] = array('<div id="wprev-66040">Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/');
+		$submenu[$menu_slug][] = array('<div id="wprev-66040">&#11088; Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/');
 		}
 	}
 

@@ -4,7 +4,7 @@ Donate link: http://ljapps.com/
 Tags: Yelp, reviews, slider, testimonials, yelp
 Requires at least: 3.0.1
 Tested up to: 7.0
-Stable tag: 9.1
+Stable tag: 9.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,7 +40,8 @@ Feature List:
 * Even hide the no text reviews completely with the click of a button.
 * Add a read more link and even change the text of it.
 * Place a summary badge (rating, review count, and Review us button) next to your reviews.
-* Tabbed template settings for Style, General, Filter, and Badge options.
+* Tabbed template settings for Style, General, Filter, Badge, and AI Summary options.
+* Review Analytics page with ratings, volume, and word-cloud insights.
 
 Check out our other free versions!
 [Facebook](https://wordpress.org/plugins/wp-facebook-reviews/)
@@ -101,6 +102,14 @@ We are always looking for features to add. Just post on the support forum or con
 5. Create as many templates as you like.
 
 == Changelog ==
+= 9.3 =
+* Security hardening of review text.
+
+= 9.2 =
+* Added a new Analytics page for review insights and charts.
+* Added Pro feature highlights and upgrade nudges throughout the admin.
+* Template Filter limited to one Yelp source in free (multi-location is Pro).
+
 = 9.1 =
 * Bug fixes.
 

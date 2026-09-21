@@ -449,9 +449,21 @@ $wpyelp_imgs_base = trailingslashit( wprev_yelp_plugin_url ) . 'public/partials/
 	<span id="settingtab1" class="settingtab nav-tab cursorpointer gotopage1"><?php _e('General Settings', 'wp-yelp-review-slider'); ?></span>
 	<span id="settingtab2" class="settingtab nav-tab cursorpointer gotopage2"><?php _e('Filter Settings', 'wp-yelp-review-slider'); ?></span>
 	<span id="settingtab3" class="settingtab nav-tab cursorpointer gotopage3"><?php _e('Badge Settings', 'wp-yelp-review-slider'); ?></span>
+	<span id="settingtab4" class="settingtab nav-tab cursorpointer gotopage4"><?php _e( 'AI Summary', 'wp-yelp-review-slider' ); ?> <span style="background:#ff6b35;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:bold;margin-left:4px;">PRO</span></span>
 </h2>
 
 <table id="settingtable0" class="form-table settingstable ">
+	<tr class="wpyelp_row">
+		<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+			<div class="wpfbr-pro-tab-banner">
+				<p style="margin:0;">
+					<?php echo wp_kses_post( __( 'Unlock <strong>15 review layouts</strong>, custom star styles, date formats, avatar controls, hover effects, and more with Pro.', 'wp-yelp-review-slider' ) ); ?>
+					<a href="https://wpreviewslider.com/" target="_blank"><strong><?php esc_html_e( 'Explore Pro Features', 'wp-yelp-review-slider' ); ?></strong></a>
+					— <?php esc_html_e( 'Use code', 'wp-yelp-review-slider' ); ?> <code>WPPRO15</code> <?php esc_html_e( 'for 15% off.', 'wp-yelp-review-slider' ); ?>
+				</p>
+			</div>
+		</td>
+	</tr>
 	<tr class="wpyelp_row">
 		<td>
 			<div class="w3_wprs-row">
@@ -479,6 +491,7 @@ $wpyelp_imgs_base = trailingslashit( wprev_yelp_plugin_url ) . 'public/partials/
 							  <option value="1" <?php if($currenttemplate->style=='1' || $currenttemplate->style==""){echo "selected";} ?>>Style 1</option>
 							  <option value="6" <?php if($currenttemplate->style=='6'){echo "selected";} ?>>Style 6</option>
 							</select>
+							<a href="https://wpreviewslider.com/features/#templatedivid" target="_blank" rel="noopener noreferrer" style="font-size: 11px; margin-left: 8px; vertical-align: middle;"><?php esc_html_e( '14 styles in Pro Version!', 'wp-yelp-review-slider' ); ?></a>
 						</div>
 						<div class="wprevpre_temp_label_row">
 							<select name="wpyelp_template_misc_showstars" id="wpyelp_template_misc_showstars">
@@ -570,6 +583,15 @@ $wpyelp_imgs_base = trailingslashit( wprev_yelp_plugin_url ) . 'public/partials/
 </table>
 
 <table id="settingtable1" class="form-table settingstable " style="display:none;">
+	<tr class="wpyelp_row">
+		<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+			<div class="wpfbr-pro-tab-banner">
+				<p style="margin:0;">
+					<?php echo wp_kses_post( __( 'Build <strong>masonry grids</strong> and advanced sliders with up to <strong>200 slides</strong>, Load More, endless scroll, fade effects, and custom breakpoints with Pro.', 'wp-yelp-review-slider' ) ); ?>
+				</p>
+			</div>
+		</td>
+	</tr>
 	<tr class="wpyelp_row">
 		<th scope="row"><?php _e('Number of Reviews:', 'wp-yelp-review-slider'); ?><a class="wpyelp_helpicon_p wpyelp_btnicononlyhelp dashicons-before dashicons-editor-help"></a></th>
 		<td><div class="divtemplatestyles">
@@ -672,6 +694,15 @@ $wpyelp_imgs_base = trailingslashit( wprev_yelp_plugin_url ) . 'public/partials/
 
 <table id="settingtable2" class="form-table settingstable " style="display:none;">
 	<tr class="wpyelp_row">
+		<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+			<div class="wpfbr-pro-tab-banner">
+				<p style="margin:0;">
+					<?php echo wp_kses_post( __( 'Filter reviews by <strong>keywords</strong>, length, tags, language, media, <strong>multiple locations/sources</strong>, or hand-pick specific reviews with Pro.', 'wp-yelp-review-slider' ) ); ?>
+				</p>
+			</div>
+		</td>
+	</tr>
+	<tr class="wpyelp_row">
 		<th scope="row"><?php _e('Choose Source:', 'wp-yelp-review-slider'); ?><a class="wpyelp_helpicon_p wpyelp_btnicononlyhelp dashicons-before dashicons-editor-help"></a></th>
 		<td>
 			<select name="wpyelp_t_filtersource" id="wpyelp_t_filtersource">
@@ -683,7 +714,13 @@ $wpyelp_imgs_base = trailingslashit( wprev_yelp_plugin_url ) . 'public/partials/
 				<?php endforeach; ?>
 			<?php endif; ?>
 			</select>
-			<p class="description"><?php _e('Which Yelp business page should this template show reviews from?', 'wp-yelp-review-slider'); ?></p>
+			<p class="description">
+			<?php
+			echo wp_kses_post(
+				__( 'The free version allows <strong>one Yelp source</strong> per template. <a href="https://wpreviewslider.com/" target="_blank">Upgrade to Pro</a> to combine multiple Yelp locations in one template. Use code <code>WPPRO15</code> for 15% off.', 'wp-yelp-review-slider' )
+			);
+			?>
+			</p>
 		</td>
 	</tr>
 	<tr class="wpyelp_row">
@@ -757,6 +794,15 @@ if(!isset($template_misc_array['bhreviews'])){ $template_misc_array['bhreviews']
 if(!isset($template_misc_array['bobasedon'])){ $template_misc_array['bobasedon']="Based on # reviews"; }
 if(!isset($template_misc_array['borevus'])){ $template_misc_array['borevus']="Review us on Yelp!"; }
 ?>
+	<tr class="wpyelp_row">
+		<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+			<div class="wpfbr-pro-tab-banner">
+				<p style="margin:0;">
+					<?php echo wp_kses_post( __( 'Create <strong>standalone review badges</strong>, dynamically display review totals, and get more control over your Review Us button with Pro.', 'wp-yelp-review-slider' ) ); ?>
+				</p>
+			</div>
+		</td>
+	</tr>
 	<tr class="wpyelp_row tabnoterow">
 		<td colspan="2">
 			<div class="tabnote">&nbsp;&nbsp;<?php _e('Use this page to place a badge next to your reviews. This is a brand new feature so let me know if you see any formatting issues.', 'wp-yelp-review-slider'); ?></div>
@@ -888,8 +934,62 @@ if(!isset($template_misc_array['borevus'])){ $template_misc_array['borevus']="Re
 	<tr class="wpyelp_row">
 		<th scope="row" colspan="2">
 			<span class="nextprevbtn w3-green button button-secondary dashicons-before dashicons-arrow-left gotopage2"><?php _e('Previous', 'wp-yelp-review-slider'); ?></span>
+			<span class="nextprevbtn w3-green button button-secondary dashicons-before dashicons-arrow-right-after gotopage4"><?php _e( 'Next', 'wp-yelp-review-slider' ); ?></span>
 		</th>
 	</tr>
+</table>
+<table id="settingtable4" class="form-table settingstable " style="display:none;">
+	<tbody>
+		<tr class="wpyelp_row">
+			<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+				<div class="wpfbr-pro-tab-banner">
+					<p style="margin:0;">
+						<?php echo wp_kses_post( __( '<strong>AI Review Summary</strong> turns your Yelp reviews into a clear visitor-facing summary with overall sentiment, common praise, and areas for improvement.', 'wp-yelp-review-slider' ) ); ?>
+					</p>
+				</div>
+			</td>
+		</tr>
+		<tr class="wpyelp_row">
+			<th scope="row">
+				<?php esc_html_e( 'Example', 'wp-yelp-review-slider' ); ?>
+			</th>
+			<td>
+				<?php
+				$ai_summary_img1 = plugin_dir_url( __FILE__ ) . 'imgs/ai_summary_example.png';
+				$ai_summary_img2 = plugin_dir_url( __FILE__ ) . 'imgs/ai_summary_example2.png';
+				?>
+				<div class="wpfbr-ai-summary-thumbs">
+					<a href="<?php echo esc_url( $ai_summary_img1 ); ?>" data-lity class="wpfbr-ai-summary-thumb">
+						<img src="<?php echo esc_url( $ai_summary_img1 ); ?>" alt="<?php esc_attr_e( 'AI Review Summary example', 'wp-yelp-review-slider' ); ?>">
+					</a>
+					<a href="<?php echo esc_url( $ai_summary_img2 ); ?>" data-lity class="wpfbr-ai-summary-thumb">
+						<img src="<?php echo esc_url( $ai_summary_img2 ); ?>" alt="<?php esc_attr_e( 'AI Review Summary example 2', 'wp-yelp-review-slider' ); ?>">
+					</a>
+				</div>
+			</td>
+		</tr>
+		<tr class="wpyelp_row">
+			<th scope="row">
+				<?php esc_html_e( 'Settings in Pro', 'wp-yelp-review-slider' ); ?>
+			</th>
+			<td>
+				<ul style="list-style: disc; margin: 0 0 0 1.5em; line-height: 1.7;">
+					<li><?php esc_html_e( 'Turn AI Summary on or off for each review template.', 'wp-yelp-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Choose the language of the generated summary (or leave blank to match the reviews).', 'wp-yelp-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Set the approximate number of sentences for summary length.', 'wp-yelp-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Generate AI Instructions for use with your own AI tool, or generate the summary with the Pro AI service.', 'wp-yelp-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Choose where it displays: as the first review, above the reviews, in a badge, and/or in the header.', 'wp-yelp-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Show or hide “What customers love” (common praises).', 'wp-yelp-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Show or hide “Areas for improvement” (common complaints).', 'wp-yelp-review-slider' ); ?></li>
+				</ul>
+			</td>
+		</tr>
+		<tr class="wpyelp_row">
+			<th scope="row" colspan="2">
+				<span class="nextprevbtn w3-green button button-secondary dashicons-before dashicons-arrow-left gotopage3"><?php _e( 'Previous', 'wp-yelp-review-slider' ); ?></span>
+			</th>
+		</tr>
+	</tbody>
 </table>
 	<?php 
 	//security nonce

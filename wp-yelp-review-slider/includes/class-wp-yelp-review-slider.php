@@ -70,7 +70,7 @@ class WP_Yelp_Review {
 	public function __construct() {
 
 		$this->_token = 'wp-yelp-review-slider';
-		$this->version = '9.1';
+		$this->version = '9.3';
 		//using this for development
 		//$this->version = time();
 
@@ -301,6 +301,16 @@ class WP_Yelp_Review {
 		 * The class responsible for defining all actions that occur in the admin area.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-wp-yelp-review-slider-admin.php';
+
+		/**
+		 * Analytics AJAX handlers.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-wp-yelp-review-slider-analytics.php';
+
+		/**
+		 * Sample AI Analysis AJAX handlers (Pro teaser).
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-wp-yelp-review-slider-ai.php';
 		
 		/**
 		 * The class responsible for parsing yelp and tripadvisor pages
@@ -419,6 +429,23 @@ class WP_Yelp_Review {
 		//add custom link to menu
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'wprev_yelp_add_external_link_admin_submenu' );
 		$this->loader->add_action( 'admin_head', $plugin_admin, 'wpse_66040_add_jquery' );
+
+		// Analytics page AJAX
+		$plugin_analytics = new WP_Yelp_Review_Analytics();
+		$this->loader->add_action( 'wp_ajax_wppro_get_overall_chart_data', $plugin_analytics, 'wppro_get_overall_chart_data' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_analytics_volume', $plugin_analytics, 'wprevpro_ajax_analytics_volume' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_analytics_platform', $plugin_analytics, 'wprevpro_ajax_analytics_platform' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_analytics_platform_volume', $plugin_analytics, 'wprevpro_ajax_analytics_platform_volume' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_analytics_rating_trends', $plugin_analytics, 'wprevpro_ajax_analytics_rating_trends' );
+
+		// Sample AI Analysis AJAX
+		$plugin_ai = new WP_Yelp_Review_AI();
+		$this->loader->add_action( 'wp_ajax_wprevpro_ai_get_latest_report', $plugin_ai, 'wprevpro_ai_get_latest_report_ajax' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_ai_get_report', $plugin_ai, 'wprevpro_ai_get_report_ajax' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_ai_list_reports', $plugin_ai, 'wprevpro_ai_list_reports_ajax' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_ai_filters_options', $plugin_ai, 'wprevpro_ai_filters_options_ajax' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_ai_delete_report', $plugin_ai, 'wprevpro_ai_delete_report_ajax' );
+		$this->loader->add_action( 'wp_ajax_wprevpro_ai_reviews_by_date', $plugin_ai, 'wprevpro_ai_reviews_by_date_ajax' );
 	}
 
 	/**

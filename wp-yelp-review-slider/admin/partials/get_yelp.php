@@ -130,7 +130,13 @@ include 'tabmenu.php';
 				</table>
 			</div>
 
-			<p><b><?php esc_html_e( 'The Pro version can download all your reviews with avatars from multiple locations and check for new reviews daily!', 'wp-yelp-reviews' ); ?></b></p>
+			<p class="small_message" style="margin-top:12px;">
+				<?php
+				echo wp_kses_post(
+					__( 'Tired of downloading manually? <a href="https://wpreviewslider.com/" target="_blank">Upgrade to Pro</a> to auto-sync new reviews daily across multiple locations. Use code <strong>WPPRO15</strong> for 15% off.', 'wp-yelp-reviews' )
+				);
+				?>
+			</p>
 
 		</div>
 	</div>

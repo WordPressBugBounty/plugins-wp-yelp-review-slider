@@ -90,28 +90,19 @@ for ($x = 0; $x < count($rowarray); $x++) {
 			$logo ="";
 		}
 		
-		$reviewtext = "";
-		if($review->review_text !=""){
-			$reviewtext = html_entity_decode($review->review_text);
-
-			$reviewtext = nl2br($reviewtext);
-		}
-		//if read more is turned on then divide then add read more span links
-		if($currentform[0]->read_more_text==''){
+		if ( ! isset( $currentform[0]->read_more_text ) || $currentform[0]->read_more_text == '' ) {
 			$currentform[0]->read_more_text = 'read more';
 		}
-		if(	$currentform[0]->read_more=="yes"){
-			$readmorenum = ( isset($template_misc_array['read_more_num']) && intval($template_misc_array['read_more_num'])>0 ) ? intval($template_misc_array['read_more_num']) : 30;
-			$countwords = str_word_count($reviewtext);
-			
-			if($countwords>$readmorenum){
-				//split in to array
-				$pieces = explode(" ", $reviewtext);
-				//slice the array in to two
-				$part1 = array_slice($pieces, 0, $readmorenum);
-				$part2 = array_slice($pieces, $readmorenum);
-				$reviewtext = implode(" ",$part1)."<a class='wprs_rd_more'>... ".$currentform[0]->read_more_text."</a><span class='wprs_rd_more_text' style='display:none;'> ".implode(" ",$part2)."</span>";
-			}
+		$read_more   = ( isset( $currentform[0]->read_more ) && $currentform[0]->read_more === 'yes' );
+		$readmorenum = ( isset( $template_misc_array['read_more_num'] ) && intval( $template_misc_array['read_more_num'] ) > 0 ) ? intval( $template_misc_array['read_more_num'] ) : 30;
+		$reviewtext  = '';
+		if ( $review->review_text != '' ) {
+			$reviewtext = $templateclass->wprev_format_review_text(
+				$review->review_text,
+				$read_more,
+				$readmorenum,
+				$currentform[0]->read_more_text
+			);
 		}
 
 		//per a row
@@ -126,7 +117,7 @@ for ($x = 0; $x < count($rowarray); $x++) {
 		<div class="wpyelp_t1_DIV_1<?php if(	$currentform[0]->template_type=="widget"){echo ' marginb10';}?> w3_wprs-col l<?php echo $perrow; ?>">
 			<div class="wpyelp_t1_DIV_2 wprev_preview_bg1_T<?php echo $currentform[0]->style; ?><?php if($iswidget){echo "_widget";} ?> wprev_preview_bradius_T<?php echo $currentform[0]->style; ?><?php if($iswidget){echo "_widget";} ?>">
 				<p class="wpyelp_t1_P_3 wprev_preview_tcolor1_T<?php echo $currentform[0]->style; ?><?php if($iswidget){echo "_widget";} ?>">
-					<span class="wpyelp_star_imgs_T<?php echo $currentform[0]->style; ?><?php if($iswidget){echo "_widget";} ?>"><img src="<?php echo $imgs_url."".$starfile; ?>" alt="" class="wpyelp_t1_star_img_file">&nbsp;&nbsp;</span><?php echo $verifiedhtml; ?><?php echo stripslashes($reviewtext); ?>
+					<span class="wpyelp_star_imgs_T<?php echo $currentform[0]->style; ?><?php if($iswidget){echo "_widget";} ?>"><img src="<?php echo $imgs_url."".$starfile; ?>" alt="" class="wpyelp_t1_star_img_file">&nbsp;&nbsp;</span><?php echo $verifiedhtml; ?><?php echo $reviewtext; ?>
 				</p>
 				<?php echo $media; ?>
 				<?php echo $logo; ?>
