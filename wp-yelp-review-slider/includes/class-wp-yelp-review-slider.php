@@ -70,7 +70,7 @@ class WP_Yelp_Review {
 	public function __construct() {
 
 		$this->_token = 'wp-yelp-review-slider';
-		$this->version = '9.3';
+		$this->version = '9.4';
 		//using this for development
 		//$this->version = time();
 
@@ -379,6 +379,9 @@ class WP_Yelp_Review {
 
 		// First-visit Brevo email opt-in redirect
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'wpyelp_maybe_redirect_optin' );
+
+		// Hide the opt-in item after WordPress has allowed the page.
+		$this->loader->add_action( 'admin_head', $plugin_admin, 'wpyelp_hide_optin_menu' );
 
 		//add menu page
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_menu_pages' );

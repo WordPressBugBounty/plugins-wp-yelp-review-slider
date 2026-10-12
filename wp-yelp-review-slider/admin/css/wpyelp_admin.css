@@ -664,6 +664,7 @@ img{vertical-align:middle;}
 #fs_connect .fs-box-container{box-shadow:none;}
 }
 #fs_connect .fs-content{background:#fff;padding:30px 20px;}
+#fs_connect .fs-content h2{font-size:1.3em;line-height:1.5em;margin:0 0 10px;text-align:center;}
 #fs_connect .fs-content p{font-size:1.2em;margin:0;padding:0;}
 #fs_connect .fs-license-key-container{margin:10px auto 0;position:relative;width:280px;}
 #fs_connect .fs-license-key-container input{width:100%;}
@@ -671,10 +672,14 @@ img{vertical-align:middle;}
 #fs_connect.require-license-key .fs-content{padding-bottom:10px;}
 #fs_connect.require-license-key .fs-actions{border-top:none;}
 #fs_connect .fs-actions{background:#fff;border-color:#f1f1f1;border-style:solid;border-width:1px 0;padding:10px 20px;}
+#fs_connect .fs-actions:after{clear:both;content:"";display:table;}
+#fs_connect .fs-actions form{float:right;margin:0;}
+#fs_connect .fs-actions #skip_activation{float:left;}
 #fs_connect .fs-actions .button{font-size:16px;height:37px;line-height:35px;margin-bottom:0;padding:0 10px 1px;}
-#fs_connect .fs-actions .button.button-primary{padding-left:15px;padding-right:15px;}
-#fs_connect .fs-actions .button.button-primary:after{content:" ➜";}
-#fs_connect.fs-anonymous-disabled .fs-actions .button.button-primary{width:100%;}
+#fs_connect .fs-actions .button.button-primary{background:#2271b1;border-color:#2271b1;color:#fff;padding-left:15px;padding-right:15px;}
+#fs_connect .fs-actions .button.button-primary:hover,#fs_connect .fs-actions .button.button-primary:focus{background:#135e96;border-color:#135e96;color:#fff;}
+#fs_connect .fs-actions .button.button-primary:after{content:" \2192";}
+#fs_connect .fs-actions .button.button-secondary{background:#f6f7f7;border-color:#ccc;color:#505050;}
 #fs_connect .fs-permissions{background:#fff;padding:10px 20px;transition:background .5s ease;}
 #fs_connect .fs-permissions>.fs-trigger{display:block;font-size:.9em;text-align:center;text-decoration:none;}
 #fs_connect .fs-permissions>.fs-trigger .fs-arrow:after{content:"→";display:inline-block;width:20px;}
@@ -686,10 +691,10 @@ img{vertical-align:middle;}
 #fs_connect .fs-freemium-licensing p{display:block;margin:0;padding:0;text-align:center;}
 #fs_connect .fs-freemium-licensing a{color:inherit;text-decoration:underline;}
 #fs_connect .fs-header{height:0;line-height:0;padding:0;position:relative;}
-#fs_connect .fs-header img{border-radius:50%;height:50px;width:50px;}
-#fs_connect .fs-header .fs-plugin-icon{border-radius:50%;left:50%;margin-left:-44px;overflow:hidden;position:absolute;top:-23px;z-index:1;}
-#fs_connect .fs-header .fs-plugin-icon,#fs_connect .fs-header .fs-plugin-icon img{height:80px;width:80px;}
-#fs_connect .fs-header .fs-plugin-icon{background:#fff;border:1px solid #efefef;padding:3px;}
+#fs_connect .fs-box-container{padding-top:48px;}
+#fs_connect .fs-header img{border-radius:0;display:block;height:52px;max-width:260px;width:auto;}
+#fs_connect .fs-header .fs-plugin-icon{background:#fff;border:1px solid #dcdcde;border-radius:10px;box-sizing:border-box;height:auto;left:50%;margin:0;overflow:hidden;padding:8px 12px;position:absolute;top:-34px;transform:translateX(-50%);width:auto;z-index:1;}
+#fs_connect .fs-header .fs-plugin-icon img{height:52px;width:auto;}
 #fs_connect .fs-terms{font-size:.85em;padding:10px 5px;text-align:center;}
 #fs_connect .fs-terms,#fs_connect .fs-terms a{color:#999;}
 #fs_connect .fs-terms a{text-decoration:none;}
@@ -710,6 +715,8 @@ img{vertical-align:middle;}
 .fs-tooltip-trigger:hover .fs-tooltip{opacity:1;visibility:visible;}
 .fs-permissions .fs-permission.fs-disabled,.fs-permissions .fs-permission.fs-disabled .fs-permission-description span{color:#aaa;}
 .fs-permissions ul{height:0;margin:0;overflow:hidden;}
+#fs_connect .fs-permissions.is-open ul{height:auto;}
+#fs_connect .fs-permissions.is-open>.fs-trigger .fs-arrow:after{content:"\2193";}
 .fs-permissions ul li{margin:0;padding:17px 15px;position:relative;}
 .fs-permissions ul li>i.dashicons{float:left;font-size:30px;height:30px;padding:5px;width:30px;}
 .fs-permissions ul li .fs-switch{float:right;}

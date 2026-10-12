@@ -395,9 +395,9 @@ class WP_Yelp_Review_Admin {
 		$submenu_slug       = 'wp_yelp-ai_analysis';
 		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_yelp_ai_analysis' ) );
 		
-		// Email opt-in (also used for first-visit redirect)
-		$submenu_page_title = 'WP Yelp Reviews : Email Opt-In';
-		$submenu_title = 'Email Opt-In';
+		// Opt-in page is reached by redirect. Keep it registered, but out of the menu.
+		$submenu_page_title = 'WP Yelp Reviews : Get Started';
+		$submenu_title = 'Get Started';
 		$submenu_slug = 'wp_yelp-opt';
 		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_yelp_opt' ) );
 
@@ -412,15 +412,39 @@ class WP_Yelp_Review_Admin {
 	}
 
 	/**
-	 * First visit to any plugin admin page: send users to the Brevo email opt-in
-	 * until they Allow, Opt Out, or Skip. (Restores gate removed in 8.4.)
+	 * Send undecided admins to the email opt-in.
+	 *
+	 * Runs on the first admin request after activation, and again whenever a
+	 * plugin screen is opened before Allow, Opt Out, or Skip.
 	 *
 	 * @since 9.1
 	 */
 	public function wpyelp_maybe_redirect_optin() {
-		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		if ( ! is_admin() || wp_doing_ajax() || wp_doing_cron() ) {
 			return;
 		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$this->wpyelp_handle_optin_submission();
+
+		$optin        = get_option( 'wp_yelp_optin', 'blank' );
+		$needs_choice = in_array( $optin, array( 'blank', '' ), true );
+
+		if ( get_transient( 'wpyelp_activation_redirect' ) ) {
+			$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$on_other_screen = ( '' !== $page && 0 !== strpos( $page, 'wp_yelp-' ) );
+			if ( ! $on_other_screen ) {
+				delete_transient( 'wpyelp_activation_redirect' );
+				$bulk = isset( $_GET['activate-multi'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				if ( $needs_choice && ! $bulk && ! is_network_admin() ) {
+					wp_safe_redirect( admin_url( 'admin.php?page=wp_yelp-opt' ) );
+					exit;
+				}
+			}
+		}
+
 		if ( empty( $_GET['page'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
@@ -440,11 +464,122 @@ class WP_Yelp_Review_Admin {
 		if ( ! in_array( $page, $plugin_pages, true ) ) {
 			return;
 		}
-		$optin = get_option( 'wp_yelp_optin', 'blank' );
-		if ( in_array( $optin, array( 'blank', '' ), true ) ) {
+		if ( $needs_choice ) {
 			wp_safe_redirect( admin_url( 'admin.php?page=wp_yelp-opt' ) );
 			exit;
 		}
+	}
+
+	/**
+	 * Save Allow, Opt Out, or Skip before admin output starts, then continue to Welcome.
+	 */
+	private function wpyelp_handle_optin_submission() {
+		$page = isset( $_REQUEST['page'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( 'wp_yelp-opt' !== $page ) {
+			return;
+		}
+
+		if ( isset( $_GET['wpyelp_skip'] ) && '1' === $_GET['wpyelp_skip'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			check_admin_referer( 'wpyelp_skip_optin' );
+			update_option( 'wp_yelp_optin', 'skipped' );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp_yelp-welcome' ) );
+			exit;
+		}
+
+		$allow   = isset( $_POST['wpyelp_submitoptform'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$opt_out = isset( $_POST['wpyelp_submitoptformoptout'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! $allow && ! $opt_out ) {
+			return;
+		}
+
+		check_admin_referer( 'wpyelp_submitoptform' );
+
+		$current_user = wp_get_current_user();
+		$firstname    = $current_user->user_firstname;
+		if ( '' === $firstname ) {
+			$firstname = $current_user->display_name;
+		}
+
+		if ( $allow ) {
+			update_option( 'wp_yelp_optin', 'yes' );
+			$is_marketing_allowed = true;
+		} else {
+			update_option( 'wp_yelp_optin', 'no' );
+			$is_marketing_allowed = null;
+		}
+
+		$this->wpyelp_send_brevo_optin(
+			$current_user->user_email,
+			$firstname,
+			$current_user->user_lastname,
+			$is_marketing_allowed,
+			14
+		);
+
+		wp_safe_redirect( admin_url( 'admin.php?page=wp_yelp-welcome' ) );
+		exit;
+	}
+
+	/**
+	 * Post the admin email to Brevo via the LJ Apps free-plugin webhook.
+	 *
+	 * @param string   $email                User email.
+	 * @param string   $firstname            First name.
+	 * @param string   $lastname             Last name.
+	 * @param bool|null $is_marketing_allowed True to allow, null to opt out.
+	 * @param int      $brevolistid          Brevo list ID.
+	 */
+	private function wpyelp_send_brevo_optin( $email, $firstname, $lastname, $is_marketing_allowed, $brevolistid ) {
+		$payload = array(
+			'type'    => 'plugin.premium.downloaded',
+			'id'      => '123456789',
+			'objects' => array(
+				'user'    => array(
+					'plugin_id'            => null,
+					'user_id'              => null,
+					'gross'                => 0,
+					'is_marketing_allowed' => $is_marketing_allowed,
+					'source'               => 0,
+					'last_login_at'        => null,
+					'email_status'         => null,
+					'email'                => $email,
+					'first'                => $firstname,
+					'last'                 => $lastname,
+					'picture'              => null,
+					'ip'                   => '',
+					'is_verified'          => true,
+				),
+				'install' => new stdClass(),
+			),
+			'is_live' => true,
+		);
+
+		$endpoint = 'https://phpstack-110055-3529608.cloudwaysapps.com/frwebhook_pro.php?freev=y&listid=' . intval( $brevolistid );
+
+		wp_remote_post(
+			$endpoint,
+			array(
+				'body'        => wp_json_encode( $payload ),
+				'headers'     => array(
+					'Content-Type' => 'application/json',
+				),
+				'timeout'     => 60,
+				'redirection' => 5,
+				'blocking'    => true,
+				'httpversion' => '1.0',
+				'sslverify'   => true,
+				'data_format' => 'body',
+			)
+		);
+	}
+
+	/**
+	 * Remove the opt-in submenu after the page-access check.
+	 *
+	 * Removing it during admin_menu makes WordPress deny the screen.
+	 */
+	public function wpyelp_hide_optin_menu() {
+		remove_submenu_page( 'wp_yelp-welcome', 'wp_yelp-opt' );
 	}
 
 	public function wp_yelp_opt() {

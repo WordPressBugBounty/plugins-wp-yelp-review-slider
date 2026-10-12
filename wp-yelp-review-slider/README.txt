@@ -4,7 +4,7 @@ Donate link: http://ljapps.com/
 Tags: Yelp, reviews, slider, testimonials, yelp
 Requires at least: 3.0.1
 Tested up to: 7.0
-Stable tag: 9.3
+Stable tag: 9.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -102,6 +102,9 @@ We are always looking for features to add. Just post on the support forum or con
 5. Create as many templates as you like.
 
 == Changelog ==
+= 9.4 =
+* Changes to the opt-in feature.
+
 = 9.3 =
 * Security hardening of review text.
 
@@ -350,6 +353,9 @@ We are always looking for features to add. Just post on the support forum or con
 * First Version
 
 == Upgrade Notice ==
+
+= 9.4 =
+* Updated email opt-in screen.
 
 = 9.1 =
 Bug fixes.

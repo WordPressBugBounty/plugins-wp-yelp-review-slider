@@ -16,7 +16,7 @@
  * Plugin Name: 	  WP Yelp Review Slider
  * Plugin URI:        https://wpreviewslider.com/
  * Description:       Allows you to easily display your Yelp Business Page reviews in your Posts, Pages, and Widget areas.
- * Version:           9.3
+ * Version:           9.4
  * Author:            LJ Apps
  * Author URI:        https://wpreviewslider.com/
  * License:           GPL-2.0+
@@ -38,7 +38,12 @@ function activate_WP_Yelp_Review( $networkwide )
 	//save time activated
 	$newtime=time();
 	update_option( 'wprev_activated_time_yelp', $newtime );
-	
+
+	// Next admin request (not a bulk activation) can land on the opt-in screen.
+	if ( empty( $networkwide ) ) {
+		set_transient( 'wpyelp_activation_redirect', '1', MINUTE_IN_SECONDS );
+	}
+
     require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-yelp-review-slider-activator.php';
     WP_Yelp_Review_Activator::activate_all( $networkwide );
 }
@@ -94,6 +99,10 @@ function wpyelp_do_this_daily() {
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wprevyelp_action_links' );
 function wprevyelp_action_links( $links )
 {
+    $optin = get_option( 'wp_yelp_optin', '' );
+    $label = ( 'yes' === $optin ) ? __( 'Opt Out', 'wp-yelp-review-slider' ) : __( 'Opt In', 'wp-yelp-review-slider' );
+    $optin_link = '<a href="' . esc_url( admin_url( 'admin.php?page=wp_yelp-opt' ) ) . '">' . esc_html( $label ) . '</a>';
+    array_splice( $links, 1, 0, $optin_link );
     $links[] = '<a href="https://wpreviewslider.com/" target="_blank"><strong style="color: #009040; display: inline;">Go Pro!</strong></a>';
     return $links;
 }
