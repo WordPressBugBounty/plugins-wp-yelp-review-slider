@@ -116,6 +116,9 @@ class WP_Yelp_Review_Admin {
 			if($_GET['page']=="wp_yelp-templates_posts"|| $_GET['page']=="wp_yelp-get_pro" || $_GET['page']=="wp_yelp-welcome"){
 				wp_enqueue_style( $this->_token."_style1", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template1.css', array(), $this->version, 'all' );
 				wp_enqueue_style( $this->_token."_style6", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
+				if ( $_GET['page'] == 'wp_yelp-templates_posts' ) {
+					wp_enqueue_style( $this->_token . '_pro_style_preview', plugin_dir_url( __FILE__ ) . 'css/wprev_pro_style_preview.css', array( $this->_token . '_style1', $this->_token . '_style6' ), $this->version, 'all' );
+				}
 				//slider styles so the live preview matches the front end
 				wp_enqueue_style( $this->_token."_unslider", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprs_unslider.css', array(), $this->version, 'all' );
 				wp_enqueue_style( $this->_token."_unslider_dots", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprs_unslider-dots.css', array(), $this->version, 'all' );
@@ -2997,6 +3000,15 @@ class WP_Yelp_Review_Admin {
 		$title            = sanitize_text_field( $get( 'wpyelp_template_title' ) );
 		$template_type    = sanitize_text_field( $get( 'wpyelp_template_type', 'post' ) );
 		$style            = sanitize_text_field( $get( 'wpyelp_template_style', '1' ) );
+		if ( $style !== '1' && $style !== '6' ) {
+			$style = '1';
+			if ( ! empty( $t_id ) ) {
+				$existing_style = $wpdb->get_var( $wpdb->prepare( "SELECT style FROM {$table_name} WHERE id = %d", absint( $t_id ) ) );
+				if ( $existing_style === '1' || $existing_style === '6' ) {
+					$style = $existing_style;
+				}
+			}
+		}
 		$display_num      = sanitize_text_field( $get( 'wpyelp_t_display_num', '3' ) );
 		$display_num_rows = sanitize_text_field( $get( 'wpyelp_t_display_num_rows', '1' ) );
 		$display_order    = sanitize_text_field( $get( 'wpyelp_t_display_order', 'newest' ) );

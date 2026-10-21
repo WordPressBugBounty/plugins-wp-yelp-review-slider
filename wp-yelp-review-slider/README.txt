@@ -4,7 +4,7 @@ Donate link: http://ljapps.com/
 Tags: Yelp, reviews, slider, testimonials, yelp
 Requires at least: 3.0.1
 Tested up to: 7.0
-Stable tag: 9.4
+Stable tag: 9.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -102,6 +102,9 @@ We are always looking for features to add. Just post on the support forum or con
 5. Create as many templates as you like.
 
 == Changelog ==
+= 9.5 =
+* Checks the reviews table encoding on update and converts legacy utf8 (3-byte) tables to utf8mb4 so reviews containing emojis can be saved.
+
 = 9.4 =
 * Changes to the opt-in feature.
 

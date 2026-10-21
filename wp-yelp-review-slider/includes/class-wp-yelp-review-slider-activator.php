@@ -62,7 +62,13 @@ class WP_Yelp_Review_Activator {
 
 		$table_name = $wpdb->prefix . 'wpyelp_reviews';
 		
-		$charset_collate = $wpdb->get_charset_collate();
+		// Create new tables as utf8mb4 so emoji in review text can be stored.
+		$has_utf8mb4 = $wpdb->get_var( "SHOW CHARACTER SET LIKE 'utf8mb4'" ) !== null;
+		if ( $has_utf8mb4 ) {
+			$charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		} else {
+			$charset_collate = $wpdb->get_charset_collate();
+		}
 
 		$sql = "CREATE TABLE $table_name (
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -113,6 +119,11 @@ class WP_Yelp_Review_Activator {
 				PRIMARY KEY (id)
 			) $charset_collate;";
 		dbDelta( $sql );
+
+		// Convert a legacy 3-byte reviews table to utf8mb4 so emoji can be stored.
+		if ( class_exists( 'WP_Yelp_Review' ) ) {
+			WP_Yelp_Review::wpyelp_maybe_convert_table_to_utf8mb4();
+		}
 		
 		//create template posts table in dbDelta 
 		$table_name = $wpdb->prefix . 'wpyelp_post_templates';
