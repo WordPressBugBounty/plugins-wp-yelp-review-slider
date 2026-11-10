@@ -70,7 +70,7 @@ class WP_Yelp_Review {
 	public function __construct() {
 
 		$this->_token = 'wp-yelp-review-slider';
-		$this->version = '9.5';
+		$this->version = '9.6';
 		//using this for development
 		//$this->version = time();
 
@@ -83,6 +83,7 @@ class WP_Yelp_Review {
 			$this->_updatedb_version_number();
 		}
 		$this->define_public_hooks();
+		$this->define_block_hooks();
 		//save version number to db
 		$this->_log_version_number();
 
@@ -342,6 +343,8 @@ class WP_Yelp_Review {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-wp-yelp-review-slider-template_action.php';
 
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-yelp-review-slider-block.php';
+
 		//register the loader
 		$this->loader = new WP_Yelp_Review_Loader();
 		
@@ -394,6 +397,9 @@ class WP_Yelp_Review {
 
 		//add menu page
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_menu_pages' );
+
+		$this->loader->add_filter( 'admin_footer_text', $plugin_admin, 'admin_footer_text', 1 );
+		$this->loader->add_action( 'wp_ajax_wpyelp_footer_rated', $plugin_admin, 'ajax_footer_rated' );
 		
 		//add ajax for adding feedback to table
 		$this->loader->add_action( 'wp_ajax_yelp_get_results', $plugin_admin, 'wpyelp_process_ajax' );
@@ -467,6 +473,22 @@ class WP_Yelp_Review {
 	 * @since    1.0.0
 	 * @access   private
 	 */
+
+	/**
+	 * Register the review template block.
+	 *
+	 * Runs on the front end as well as in wp-admin so the render callback is available.
+	 *
+	 * @since 9.6
+	 */
+	private function define_block_hooks() {
+		$block = new WP_Yelp_Review_Slider_Block();
+
+		$this->loader->add_action( 'init', $block, 'register_block' );
+		$this->loader->add_action( 'enqueue_block_editor_assets', $block, 'enqueue_editor_data' );
+		$this->loader->add_action( 'enqueue_block_assets', $block, 'enqueue_preview_assets' );
+	}
+
 	private function define_public_hooks() {
 
 		$plugin_public = new WP_Yelp_Review_Public( $this->get_token(), $this->get_version() );

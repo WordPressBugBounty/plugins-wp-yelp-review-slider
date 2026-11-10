@@ -106,6 +106,16 @@
 		
 		$createslider = htmlentities($_POST['wpyelp_t_createslider']);
 		$numslides = htmlentities($_POST['wpyelp_t_numslides']);
+		if ( 'no' !== $createslider ) {
+			$createslider = 'yes';
+		}
+		$numslides = absint( $numslides );
+		if ( $numslides < 2 ) {
+			$numslides = 3;
+		}
+		if ( $numslides > 10 ) {
+			$numslides = 10;
+		}
 		
 		$read_more = sanitize_text_field($_POST['wprevpro_t_read_more']);
 		$read_more_text = sanitize_text_field($_POST['wprevpro_t_read_more_text']);
@@ -143,13 +153,32 @@
 		$templatemiscarray['tfont2'] = $tfont2_val > 0 ? (string) $tfont2_val : '';
 
 		// General-tab options (slider + read more).
-		$templatemiscarray['slidespeed']         = isset($_POST['wpyelp_t_slidespeed']) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_t_slidespeed'] ) ) : '1';
-		$templatemiscarray['slideautodelay']     = isset($_POST['wpyelp_t_slideautodelay']) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_t_slideautodelay'] ) ) : '5';
-		$templatemiscarray['sliderautoplay']     = isset($_POST['wpyelp_sliderautoplay']) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderautoplay'] ) ) : '';
-		$templatemiscarray['sliderhideprevnext'] = isset($_POST['wpyelp_sliderhideprevnext']) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderhideprevnext'] ) ) : '';
-		$templatemiscarray['sliderhidedots']     = isset($_POST['wpyelp_sliderhidedots']) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderhidedots'] ) ) : '';
-		$templatemiscarray['sliderfixedheight']  = isset($_POST['wpyelp_sliderfixedheight']) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderfixedheight'] ) ) : '';
-		$templatemiscarray['slidermobileview']   = isset($_POST['wpyelp_slidermobileview']) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_slidermobileview'] ) ) : '';
+		if ( isset( $_POST['wpyelp_sliderarrows'] ) ) {
+			$templatemiscarray['sliderhideprevnext'] = ( 'no' === sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderarrows'] ) ) ) ? 'yes' : '';
+		} elseif ( isset( $_POST['wpyelp_sliderhideprevnext'] ) ) {
+			$templatemiscarray['sliderhideprevnext'] = sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderhideprevnext'] ) );
+		} else {
+			$templatemiscarray['sliderhideprevnext'] = '';
+		}
+		if ( isset( $_POST['wpyelp_sliderdots'] ) ) {
+			$templatemiscarray['sliderhidedots'] = ( 'no' === sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderdots'] ) ) ) ? 'yes' : '';
+		} elseif ( isset( $_POST['wpyelp_sliderhidedots'] ) ) {
+			$templatemiscarray['sliderhidedots'] = sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderhidedots'] ) );
+		} else {
+			$templatemiscarray['sliderhidedots'] = '';
+		}
+		if ( isset( $_POST['wpyelp_sliderheight'] ) ) {
+			$templatemiscarray['sliderfixedheight'] = ( 'no' === sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderheight'] ) ) ) ? 'yes' : '';
+		} elseif ( isset( $_POST['wpyelp_sliderfixedheight'] ) ) {
+			$templatemiscarray['sliderfixedheight'] = sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderfixedheight'] ) );
+		} else {
+			$templatemiscarray['sliderfixedheight'] = '';
+		}
+		$templatemiscarray['sliderautoplay'] = isset( $_POST['wpyelp_sliderautoplay'] ) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_sliderautoplay'] ) ) : '';
+		$templatemiscarray['slidespeed'] = isset( $_POST['wpyelp_t_slidespeed'] ) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_t_slidespeed'] ) ) : '1';
+		$templatemiscarray['slideautodelay'] = isset( $_POST['wpyelp_t_slideautodelay'] ) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_t_slideautodelay'] ) ) : '5';
+		$templatemiscarray['slidermobileview'] = ( isset( $_POST['wpyelp_slidermobileview'] ) && 'one' === sanitize_text_field( wp_unslash( $_POST['wpyelp_slidermobileview'] ) ) ) ? 'one' : '';
+
 		$templatemiscarray['review_same_height'] = isset($_POST['wpyelp_t_review_same_height']) ? sanitize_text_field( wp_unslash( $_POST['wpyelp_t_review_same_height'] ) ) : 'no';
 		$templatemiscarray['read_more_num']      = isset($_POST['wprevpro_t_read_more_num']) ? sanitize_text_field( wp_unslash( $_POST['wprevpro_t_read_more_num'] ) ) : '30';
 		$templatemiscarray['read_more_color']    = isset($_POST['wprevpro_t_read_more_color']) ? WP_Yelp_Review_Sanitize::sanitize_css_color( wp_unslash( $_POST['wprevpro_t_read_more_color'] ) ) : '';
@@ -644,39 +673,223 @@ $wpyelp_imgs_base = trailingslashit( wprev_yelp_plugin_url ) . 'public/partials/
 			<p class="description"><?php _e('Display any photos attached to a Yelp review. Click a photo to open it in a pop-up.', 'wp-yelp-review-slider'); ?></p>
 		</td>
 	</tr>
-	<tr class="wpyelp_row">
-		<th scope="row" style="min-width:220px"><?php _e('Slider or Grid:', 'wp-yelp-review-slider'); ?><a class="wpyelp_helpicon_p wpyelp_btnicononlyhelp dashicons-before dashicons-editor-help"></a></th>
-		<td>
-			<div class="divtemplatestyles">
-				<label for="wpyelp_t_createslider"></label>
-				<select name="wpyelp_t_createslider" id="wpyelp_t_createslider">
-					<option value="no" <?php if($currenttemplate->createslider=="no"){echo "selected";} ?>><?php _e('Grid', 'wp-yelp-review-slider'); ?></option>
-					<option value="yes" <?php if($currenttemplate->createslider=="yes"){echo "selected";} ?>><?php _e('Slider', 'wp-yelp-review-slider'); ?></option>
-				</select>
-				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				<label for="wpyelp_t_numslides"><?php _e('Total slides:', 'wp-yelp-review-slider'); ?>&nbsp;</label>
-				<select name="wpyelp_t_numslides" id="wpyelp_t_numslides">
-					<?php for ( $si = 2; $si <= 10; $si++ ) : ?>
-					<option value="<?php echo $si; ?>" <?php if($currenttemplate->numslides== (string) $si){echo "selected";} ?>><?php echo $si; ?></option>
-					<?php endfor; ?>
-				</select>
-				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				<label for="wpyelp_t_slidespeed"><?php _e('Slide speed:', 'wp-yelp-review-slider'); ?>&nbsp;</label>
-				<input id="wpyelp_t_slidespeed" type="number" name="wpyelp_t_slidespeed" placeholder="" value="<?php echo esc_attr( $template_misc_array['slidespeed'] > 0 ? $template_misc_array['slidespeed'] : '1' ); ?>" style="width: 4em">
-				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				<label for="wpyelp_t_slideautodelay"><?php _e('Auto-play delay:', 'wp-yelp-review-slider'); ?>&nbsp;</label>
-				<input id="wpyelp_t_slideautodelay" type="number" name="wpyelp_t_slideautodelay" placeholder="" value="<?php echo esc_attr( $template_misc_array['slideautodelay'] > 0 ? $template_misc_array['slideautodelay'] : '5' ); ?>" style="width: 4em">
-			</div>
-			<div class="divtemplatestyles" style="margin-top:8px;">
-				<label style="margin-right:12px;"><input type="checkbox" id="wpyelp_slidermobileview" name="wpyelp_slidermobileview" value="one" <?php if($template_misc_array['slidermobileview']=='one'){echo 'checked="checked"';}?>> <?php _e('One review on mobile', 'wp-yelp-review-slider'); ?></label>
-				<label style="margin-right:12px;"><input type="checkbox" id="wpyelp_sliderhideprevnext" name="wpyelp_sliderhideprevnext" value="yes" <?php if($template_misc_array['sliderhideprevnext']== "yes"){echo 'checked="checked"';}?>> <?php _e('Hide Prev/Next', 'wp-yelp-review-slider'); ?></label>
-				<label style="margin-right:12px;"><input type="checkbox" id="wpyelp_sliderhidedots" name="wpyelp_sliderhidedots" value="yes" <?php if($template_misc_array['sliderhidedots']== "yes"){echo 'checked="checked"';}?>> <?php _e('Hide Dots', 'wp-yelp-review-slider'); ?></label>
-				<label style="margin-right:12px;"><input type="checkbox" id="wpyelp_sliderautoplay" name="wpyelp_sliderautoplay" value="yes" <?php if($template_misc_array['sliderautoplay']== "yes"){echo 'checked="checked"';}?>> <?php _e('Auto-play', 'wp-yelp-review-slider'); ?></label>
-				<label style="margin-right:12px;"><input type="checkbox" id="wpyelp_sliderfixedheight" name="wpyelp_sliderfixedheight" value="yes" <?php if($template_misc_array['sliderfixedheight']== "yes"){echo 'checked="checked"';}?>> <?php _e('Static Height', 'wp-yelp-review-slider'); ?></label>
-			</div>
-			<p class="description"><?php _e('Allows you to create a slide show with your reviews.', 'wp-yelp-review-slider'); ?></p>
-		</td>
-	</tr>
+				<?php
+			if ( ! isset( $template_misc_array['sliderhideprevnext'] ) ) {
+				$template_misc_array['sliderhideprevnext'] = '';
+			}
+			if ( ! isset( $template_misc_array['sliderautoplay'] ) ) {
+				$template_misc_array['sliderautoplay'] = '';
+			}
+			if ( ! isset( $template_misc_array['slidespeed'] ) ) {
+				$template_misc_array['slidespeed'] = '';
+			}
+			if ( ! isset( $template_misc_array['slideautodelay'] ) ) {
+				$template_misc_array['slideautodelay'] = '';
+			}
+			if ( ! isset( $template_misc_array['sliderhidedots'] ) ) {
+				$template_misc_array['sliderhidedots'] = '';
+			}
+			if ( ! isset( $template_misc_array['sliderfixedheight'] ) ) {
+				$template_misc_array['sliderfixedheight'] = '';
+			}
+			$wprev_slider_arrows   = ( 'yes' === $template_misc_array['sliderhideprevnext'] ) ? 'no' : 'yes';
+			$wprev_slider_dots     = ( 'yes' === $template_misc_array['sliderhidedots'] ) ? 'no' : 'yes';
+			$wprev_slider_height   = ( 'yes' === $template_misc_array['sliderfixedheight'] ) ? 'no' : 'yes';
+			$wprev_slider_mobile   = 'stack';
+			if ( isset( $currenttemplate->slidermobileview ) && 'one' === $currenttemplate->slidermobileview ) {
+				$wprev_slider_mobile = 'one';
+			} elseif ( isset( $template_misc_array['slidermobileview'] ) && 'one' === $template_misc_array['slidermobileview'] ) {
+				$wprev_slider_mobile = 'one';
+			}
+			$wprev_slider_autoplay = ( 'yes' === $template_misc_array['sliderautoplay'] ) ? 'yes' : 'no';
+			$wprev_slider_delay    = ( $template_misc_array['slideautodelay'] > 0 ) ? (string) $template_misc_array['slideautodelay'] : '5';
+			$wprev_slider_speed    = ( $template_misc_array['slidespeed'] > 0 ) ? $template_misc_array['slidespeed'] : '1';
+			$wprev_pro_slide_counts = array( 15, 20, 25, 30, 40, 50, 75, 100, 150, 200 );
+			$wprev_pro_badge        = '<span class="wprevpro-pro-badge">' . esc_html__( 'PRO', 'wp-yelp-review-slider' ) . '</span>';
+			?>
+
+			<tr class="wpyelp_row">
+				<th scope="row" style="min-width:220px">
+					<?php esc_html_e( 'Slider Or Grid', 'wp-yelp-review-slider' ); ?><a class="wpyelp_helpicon_p wpyelp_btnicononlyhelp dashicons-before dashicons-editor-help"></a>
+				</th>
+				<td>
+					<div class="divtemplatestyles">
+						<select name="wpyelp_t_createslider" id="wpyelp_t_createslider">
+							<option value="no" <?php selected( $currenttemplate->createslider, 'no' ); ?>><?php esc_html_e( 'Grid', 'wp-yelp-review-slider' ); ?></option>
+							<option value="yes" <?php selected( $currenttemplate->createslider, 'yes' ); ?>><?php esc_html_e( 'Slider - Normal', 'wp-yelp-review-slider' ); ?></option>
+							<option value="sli" class="wprevpro-pro-style" style="color:#a7aaad;background-color:#fff;"><?php esc_html_e( 'Slider - Advanced', 'wp-yelp-review-slider' ); ?></option>
+						</select>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+						<label id="wpyelp_t_numslides_label" for="wpyelp_t_numslides" <?php echo ( 'no' === $currenttemplate->createslider || '' === $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>><?php esc_html_e( 'How many total slides?', 'wp-yelp-review-slider' ); ?></label>&nbsp;
+						<select name="wpyelp_t_numslides" id="wpyelp_t_numslides" <?php echo ( 'no' === $currenttemplate->createslider || '' === $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>>
+							<?php
+							for ( $wprev_slide_count = 2; $wprev_slide_count <= 10; $wprev_slide_count++ ) {
+								echo '<option value="' . esc_attr( $wprev_slide_count ) . '" ' . selected( (string) $currenttemplate->numslides, (string) $wprev_slide_count, false ) . '>' . esc_html( $wprev_slide_count ) . '</option>';
+							}
+							foreach ( $wprev_pro_slide_counts as $wprev_slide_count ) {
+								echo '<option value="' . esc_attr( $wprev_slide_count ) . '" class="wprevpro-pro-style" disabled="disabled" style="color:#a7aaad;background-color:#fff;">' . esc_html( $wprev_slide_count ) . '</option>';
+							}
+							?>
+						</select>
+					</div>
+					<p class="description">
+						<?php esc_html_e( 'Allows you to create a slide show with your reviews. One slide equals one page of reviews.', 'wp-yelp-review-slider' ); ?>
+					</p>
+					<p id="wprevpro_pro_slider_note" class="wprevpro-pro-style-note"><?php esc_html_e( 'Slider - Advanced is available in Pro.', 'wp-yelp-review-slider' ); ?></p>
+				</td>
+			</tr>
+
+			<tr class="wpyelp_row" id="slidersettingsrow" <?php echo ( 'no' === $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>>
+				<th scope="row">
+					<?php esc_html_e( 'Slider Settings:', 'wp-yelp-review-slider' ); ?>
+				</th>
+				<td>
+					<div class="w3_wprs-row slidersettingsdivs">
+						<div class="w3_wprs-col s12">
+							<div class="w3_wprs-col s4 slidersettingsdivtoprow"><?php esc_html_e( 'Autoplay Slides:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8">
+								<input type="radio" name="wpyelp_sliderautoplay" id="wpyelp_sliderautoplay1-radio" value="no" <?php checked( $wprev_slider_autoplay, 'no' ); ?>>
+								<label for="wpyelp_sliderautoplay1-radio"><?php esc_html_e( 'No', 'wp-yelp-review-slider' ); ?></label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="radio" name="wpyelp_sliderautoplay" id="wpyelp_sliderautoplay2-radio" value="yes" <?php checked( $wprev_slider_autoplay, 'yes' ); ?>>
+								<label for="wpyelp_sliderautoplay2-radio"><?php esc_html_e( 'Yes', 'wp-yelp-review-slider' ); ?></label>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<label class="timedelay <?php echo ( 'yes' !== $wprev_slider_autoplay ) ? 'wprevhiddenClass' : ''; ?>" for="wpyelp_t_slideautodelay"><?php esc_html_e( 'Time delay between slides:', 'wp-yelp-review-slider' ); ?></label>
+								<select class="timedelay <?php echo ( 'yes' !== $wprev_slider_autoplay ) ? 'wprevhiddenClass' : ''; ?>" name="wpyelp_t_slideautodelay" id="wpyelp_t_slideautodelay">
+									<option value="0" disabled="disabled"><?php esc_html_e( '0 sec', 'wp-yelp-review-slider' ); ?></option>
+									<?php
+									$wprev_delay_options = array( '1', '3', '5', '7', '9', '11', '13', '15', '20', '25' );
+									if ( ! in_array( $wprev_slider_delay, $wprev_delay_options, true ) ) {
+										$wprev_delay_options[] = $wprev_slider_delay;
+										sort( $wprev_delay_options, SORT_NUMERIC );
+									}
+									foreach ( $wprev_delay_options as $wprev_delay_option ) {
+										echo '<option value="' . esc_attr( $wprev_delay_option ) . '" ' . selected( $wprev_slider_delay, $wprev_delay_option, false ) . '>' . esc_html( sprintf( /* translators: %s: number of seconds. */ __( '%s sec', 'wp-yelp-review-slider' ), $wprev_delay_option ) ) . '</option>';
+									}
+									?>
+								</select>
+							</div>
+						</div>
+						<div class="w3_wprs-col s12">
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Slide Animation:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="radio" name="wpyelp_sliderdirection" id="wpyelp_sliderdirection1-radio" value="horizontal" checked="checked">
+								<label for="wpyelp_sliderdirection1-radio"><?php esc_html_e( 'Horizontal', 'wp-yelp-review-slider' ); ?></label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<span class="wprevpro-pro-locked">
+									<input type="radio" id="wpyelp_sliderdirection3-radio" value="fade" disabled="disabled">
+									<label for="wpyelp_sliderdirection3-radio"><?php esc_html_e( 'Fade', 'wp-yelp-review-slider' ); ?></label>
+									<?php echo $wprev_pro_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								</span>
+							</div>
+						</div>
+						<div class="w3_wprs-col s12">
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Show Navigation Arrows:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="radio" name="wpyelp_sliderarrows" id="wpyelp_sliderarrows1-radio" value="yes" <?php checked( $wprev_slider_arrows, 'yes' ); ?>>
+								<label for="wpyelp_sliderarrows1-radio"><?php esc_html_e( 'Yes', 'wp-yelp-review-slider' ); ?></label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<span class="wprevpro-pro-locked">
+									<input type="radio" id="wpyelp_sliderarrows3-radio" value="des" disabled="disabled">
+									<label for="wpyelp_sliderarrows3-radio"><?php esc_html_e( 'Desktop Only', 'wp-yelp-review-slider' ); ?></label>
+									<?php echo $wprev_pro_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="radio" name="wpyelp_sliderarrows" id="wpyelp_sliderarrows2-radio" value="no" <?php checked( $wprev_slider_arrows, 'no' ); ?>>
+								<label for="wpyelp_sliderarrows2-radio"><?php esc_html_e( 'No', 'wp-yelp-review-slider' ); ?></label>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<span class="wprevpro-pro-locked">
+									<label><?php esc_html_e( 'Color:', 'wp-yelp-review-slider' ); ?></label>
+									<input type="text" value="" disabled="disabled" class="wprevpro-pro-color-placeholder" title="<?php esc_attr_e( 'Arrow color is available in Pro.', 'wp-yelp-review-slider' ); ?>">
+									<?php echo $wprev_pro_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								</span>
+							</div>
+						</div>
+						<div class="w3_wprs-col s12">
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Show Navigation Dots:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="radio" name="wpyelp_sliderdots" id="wpyelp_sliderdots1-radio" value="yes" <?php checked( $wprev_slider_dots, 'yes' ); ?>>
+								<label for="wpyelp_sliderdots1-radio"><?php esc_html_e( 'Yes', 'wp-yelp-review-slider' ); ?></label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<span class="wprevpro-pro-locked">
+									<input type="radio" id="wpyelp_sliderdots3-radio" value="des" disabled="disabled">
+									<label for="wpyelp_sliderdots3-radio"><?php esc_html_e( 'Desktop Only', 'wp-yelp-review-slider' ); ?></label>
+									<?php echo $wprev_pro_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="radio" name="wpyelp_sliderdots" id="wpyelp_sliderdots2-radio" value="no" <?php checked( $wprev_slider_dots, 'no' ); ?>>
+								<label for="wpyelp_sliderdots2-radio"><?php esc_html_e( 'No', 'wp-yelp-review-slider' ); ?></label>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<span class="wprevpro-pro-locked">
+									<label><?php esc_html_e( 'Color:', 'wp-yelp-review-slider' ); ?></label>
+									<input type="text" value="" disabled="disabled" class="wprevpro-pro-color-placeholder" title="<?php esc_attr_e( 'Dot color is available in Pro.', 'wp-yelp-review-slider' ); ?>">
+									<?php echo $wprev_pro_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								</span>
+							</div>
+						</div>
+						<div class="w3_wprs-col s12">
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Change Height of Each Slide:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="radio" name="wpyelp_sliderheight" id="wpyelp_sliderheight2-radio" value="no" <?php checked( $wprev_slider_height, 'no' ); ?>>
+								<label for="wpyelp_sliderheight2-radio"><?php esc_html_e( 'No', 'wp-yelp-review-slider' ); ?></label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="radio" name="wpyelp_sliderheight" id="wpyelp_sliderheight1-radio" value="yes" <?php checked( $wprev_slider_height, 'yes' ); ?>>
+								<label for="wpyelp_sliderheight1-radio"><?php esc_html_e( 'Yes', 'wp-yelp-review-slider' ); ?></label>
+							</div>
+						</div>
+						<div class="w3_wprs-col s12">
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Animation Speed:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="number" name="wpyelp_t_slidespeed" id="wpyelp_t_slidespeed" style="width: 4em;min-width: 4em;" min="0" step="0.1" value="<?php echo esc_attr( $wprev_slider_speed ); ?>">
+								<label for="wpyelp_t_slidespeed"><?php esc_html_e( 'How long (in seconds) the slider should animate between slides.', 'wp-yelp-review-slider' ); ?></label>
+							</div>
+						</div>
+						<div class="w3_wprs-col s12 onepermobilerow">
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Mobile Slide View:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="radio" name="wpyelp_slidermobileview" id="wpyelp_slidermobile2-radio" value="stack" <?php checked( $wprev_slider_mobile, 'stack' ); ?>>
+								<label for="wpyelp_slidermobile2-radio"><?php esc_html_e( 'Stack Reviews', 'wp-yelp-review-slider' ); ?></label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="radio" name="wpyelp_slidermobileview" id="wpyelp_slidermobile1-radio" value="one" <?php checked( $wprev_slider_mobile, 'one' ); ?>>
+								<label for="wpyelp_slidermobile1-radio"><?php esc_html_e( 'One Review per Slide', 'wp-yelp-review-slider' ); ?></label>
+							</div>
+						</div>
+						<div class="w3_wprs-col s12 slickdiv wprevpro-pro-locked-heading wprevpro-pro-locked" <?php echo ( 'sli' !== $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>>
+							<strong><?php esc_html_e( 'Advanced Slider', 'wp-yelp-review-slider' ); ?></strong>
+							<?php echo $wprev_pro_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						</div>
+						<div class="w3_wprs-col s12 slickdiv wprevpro-pro-locked" <?php echo ( 'sli' !== $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>>
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Infinite Scroll:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="checkbox" id="wpyelp_sli_infinite" value="yes" disabled="disabled">
+							</div>
+						</div>
+						<div class="w3_wprs-col s12 slickdiv wprevpro-pro-locked" <?php echo ( 'sli' !== $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>>
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Scroll One Review:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="checkbox" id="wpyelp_sli_slidestoscroll" value="yes" disabled="disabled">
+							</div>
+						</div>
+						<div class="w3_wprs-col s12 slickdiv wprevpro-pro-locked" <?php echo ( 'sli' !== $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>>
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Center Mode:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="checkbox" id="wpyelp_sli_centermode" value="yes" disabled="disabled">
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<label for="wpyelp_sli_centermode_padding"><?php esc_html_e( 'Center Padding:', 'wp-yelp-review-slider' ); ?></label>
+								<input type="number" style="width: 4em;min-width: 4em;" id="wpyelp_sli_centermode_padding" value="60" disabled="disabled">
+							</div>
+						</div>
+						<div class="w3_wprs-col s12 slickdiv wprevpro-pro-locked" <?php echo ( 'sli' !== $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>>
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Avatar Navigation:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<input type="checkbox" id="wpyelp_sli_avatarnav" value="yes" disabled="disabled">
+							</div>
+						</div>
+						<div class="w3_wprs-col s12 slickdiv wprevpro-pro-locked" <?php echo ( 'sli' !== $currenttemplate->createslider ) ? 'style="display:none;"' : ''; ?>>
+							<div class="w3_wprs-col s4 slidersettingsdiv"><?php esc_html_e( 'Responsive Breakpoints:', 'wp-yelp-review-slider' ); ?></div>
+							<div class="w3_wprs-col s8 slidersettingsdivrt">
+								<label for="wpyelp_sli_bp_tablet"><?php esc_html_e( 'Tablet (px):', 'wp-yelp-review-slider' ); ?></label>
+								<input type="number" style="width: 5em;min-width: 5em;" id="wpyelp_sli_bp_tablet" value="992" disabled="disabled">
+								&nbsp;&nbsp;
+								<label for="wpyelp_sli_bp_mobile"><?php esc_html_e( 'Mobile (px):', 'wp-yelp-review-slider' ); ?></label>
+								<input type="number" style="width: 5em;min-width: 5em;" id="wpyelp_sli_bp_mobile" value="600" disabled="disabled">
+							</div>
+						</div>
+					</div>
+				</td>
+			</tr>
 	<?php
 	if(!isset($currenttemplate->read_more)){
 		$currenttemplate->read_more='';

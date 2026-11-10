@@ -109,7 +109,7 @@ class WP_Yelp_Review_Admin {
 			wp_enqueue_style( $this->_token."_wprev_w3", plugin_dir_url( __FILE__ ) . 'css/wprev_w3.css', array(), $this->version, 'all' );
 
 			wp_enqueue_style( $this->_token, plugin_dir_url( __FILE__ ) . 'css/wpyelp_admin.css', array(), $this->version, 'all' );
-			wp_enqueue_style( $this->_token . '_wprev_admin', plugin_dir_url( __FILE__ ) . 'css/wprev_admin.css', array(), $this->version, 'all' );
+			wp_enqueue_style( $this->_token . '_wprev_admin', plugin_dir_url( __FILE__ ) . 'css/wprev_admin.css', array(), filemtime( plugin_dir_path( __FILE__ ) . 'css/wprev_admin.css' ), 'all' );
 			wp_enqueue_style( $this->_token."_wpyelp_w3", plugin_dir_url( __FILE__ ) . 'css/wpyelp_w3.css', array(), $this->version, 'all' );
 			}
 			//load template styles for preview
@@ -236,7 +236,7 @@ class WP_Yelp_Review_Admin {
 				) );
 
 				//admin js
-				wp_enqueue_script('wpyelp_templates_posts_page-js', plugin_dir_url( __FILE__ ) . 'js/wpyelp_templates_posts_page.js', array( 'jquery','wpyelp_unslider-js', $this->_token."_lity", $this->_token."_plublic" ), $this->version, false );
+				wp_enqueue_script('wpyelp_templates_posts_page-js', plugin_dir_url( __FILE__ ) . 'js/wpyelp_templates_posts_page.js', array( 'jquery','wpyelp_unslider-js', $this->_token."_lity", $this->_token."_plublic" ), filemtime( plugin_dir_path( __FILE__ ) . 'js/wpyelp_templates_posts_page.js' ), false );
 				//used for ajax
 				wp_localize_script('wpyelp_templates_posts_page-js', 'adminjs_script_vars', 
 					array(
@@ -3016,6 +3016,16 @@ class WP_Yelp_Review_Admin {
 		$template_css     = sanitize_text_field( $get( 'wpyelp_template_css' ) );
 		$createslider     = sanitize_text_field( $get( 'wpyelp_t_createslider', 'yes' ) );
 		$numslides        = sanitize_text_field( $get( 'wpyelp_t_numslides', '3' ) );
+		if ( 'no' !== $createslider ) {
+			$createslider = 'yes';
+		}
+		$numslides = absint( $numslides );
+		if ( $numslides < 2 ) {
+			$numslides = 3;
+		}
+		if ( $numslides > 10 ) {
+			$numslides = 10;
+		}
 		$read_more        = sanitize_text_field( $get( 'wprevpro_t_read_more', 'no' ) );
 		$read_more_text   = sanitize_text_field( $get( 'wprevpro_t_read_more_text', 'read more' ) );
 		$min_rating       = sanitize_text_field( $get( 'wpyelp_t_min_rating', '1' ) );
@@ -3044,13 +3054,29 @@ class WP_Yelp_Review_Admin {
 		$templatemiscarray['tfont2'] = $ajax_tfont2 > 0 ? (string) $ajax_tfont2 : '';
 
 		// General-tab options (slider + read more).
-		$templatemiscarray['slidespeed']         = sanitize_text_field( $get( 'wpyelp_t_slidespeed', '1' ) );
-		$templatemiscarray['slideautodelay']     = sanitize_text_field( $get( 'wpyelp_t_slideautodelay', '5' ) );
-		$templatemiscarray['sliderautoplay']     = sanitize_text_field( $get( 'wpyelp_sliderautoplay' ) );
-		$templatemiscarray['sliderhideprevnext'] = sanitize_text_field( $get( 'wpyelp_sliderhideprevnext' ) );
-		$templatemiscarray['sliderhidedots']     = sanitize_text_field( $get( 'wpyelp_sliderhidedots' ) );
-		$templatemiscarray['sliderfixedheight']  = sanitize_text_field( $get( 'wpyelp_sliderfixedheight' ) );
-		$templatemiscarray['slidermobileview']   = sanitize_text_field( $get( 'wpyelp_slidermobileview' ) );
+		$slider_arrows_posted = sanitize_text_field( $get( 'wpyelp_sliderarrows' ) );
+		if ( $slider_arrows_posted !== '' ) {
+			$templatemiscarray['sliderhideprevnext'] = ( 'no' === $slider_arrows_posted ) ? 'yes' : '';
+		} else {
+			$templatemiscarray['sliderhideprevnext'] = sanitize_text_field( $get( 'wpyelp_sliderhideprevnext' ) );
+		}
+		$slider_dots_posted = sanitize_text_field( $get( 'wpyelp_sliderdots' ) );
+		if ( $slider_dots_posted !== '' ) {
+			$templatemiscarray['sliderhidedots'] = ( 'no' === $slider_dots_posted ) ? 'yes' : '';
+		} else {
+			$templatemiscarray['sliderhidedots'] = sanitize_text_field( $get( 'wpyelp_sliderhidedots' ) );
+		}
+		$slider_height_posted = sanitize_text_field( $get( 'wpyelp_sliderheight' ) );
+		if ( $slider_height_posted !== '' ) {
+			$templatemiscarray['sliderfixedheight'] = ( 'no' === $slider_height_posted ) ? 'yes' : '';
+		} else {
+			$templatemiscarray['sliderfixedheight'] = sanitize_text_field( $get( 'wpyelp_sliderfixedheight' ) );
+		}
+		$templatemiscarray['sliderautoplay'] = sanitize_text_field( $get( 'wpyelp_sliderautoplay' ) );
+		$templatemiscarray['slidespeed'] = sanitize_text_field( $get( 'wpyelp_t_slidespeed', '1' ) );
+		$templatemiscarray['slideautodelay'] = sanitize_text_field( $get( 'wpyelp_t_slideautodelay', '5' ) );
+		$templatemiscarray['slidermobileview'] = ( 'one' === sanitize_text_field( $get( 'wpyelp_slidermobileview' ) ) ) ? 'one' : '';
+
 		$templatemiscarray['review_same_height'] = sanitize_text_field( $get( 'wpyelp_t_review_same_height', 'no' ) );
 		$templatemiscarray['read_more_num']      = sanitize_text_field( $get( 'wprevpro_t_read_more_num', '30' ) );
 		$templatemiscarray['read_more_color']    = WP_Yelp_Review_Sanitize::sanitize_css_color( $get( 'wprevpro_t_read_more_color' ) );
@@ -3152,6 +3178,56 @@ class WP_Yelp_Review_Admin {
 
 		echo wp_json_encode( $returnarray );
 		die();
+	}
+
+	/**
+	 * Ask for a WordPress.org review in the admin footer on this plugin's screens.
+	 *
+	 * @param string $footer_text Footer text to be rendered.
+	 * @return string
+	 */
+	public function admin_footer_text( $footer_text ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $footer_text;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only admin screen check.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		if ( '' === $page || 0 !== strpos( $page, 'wp_yelp-' ) ) {
+			return $footer_text;
+		}
+
+		if ( get_option( 'wpyelp_admin_footer_text_rated' ) ) {
+			return '<span id="footer-thankyou">' . esc_html__( 'Thank you for using WP Yelp Review Slider.', 'wp-yelp-review-slider' ) . '</span>';
+		}
+
+		$footer_text = sprintf(
+			/* translators: 1: plugin name, 2: five star rating link. */
+			__( 'If you like %1$s please leave us a %2$s rating. A huge thanks in advance!', 'wp-yelp-review-slider' ),
+			'<strong>' . esc_html__( 'WP Yelp Review Slider', 'wp-yelp-review-slider' ) . '</strong>',
+			'<a href="' . esc_url( 'https://wordpress.org/support/plugin/wp-yelp-review-slider/reviews?rate=5#new-post' ) . '" target="_blank" rel="noopener noreferrer" class="wprev-rating-link" style="color:#2271b1" aria-label="' . esc_attr__( 'five star', 'wp-yelp-review-slider' ) . '" data-rated="' . esc_attr__( 'Thanks :)', 'wp-yelp-review-slider' ) . '">&#9733;&#9733;&#9733;&#9733;&#9733;</a>'
+		);
+
+		wp_register_script( 'wpyelp-admin-footer-rating', '', array(), $this->version, true );
+		wp_enqueue_script( 'wpyelp-admin-footer-rating' );
+		wp_add_inline_script(
+			'wpyelp-admin-footer-rating',
+			"(function(){'use strict';var ratingLink=document.querySelector('a.wprev-rating-link');if(!ratingLink){return;}ratingLink.addEventListener('click',function(){var formData=new FormData();formData.append('action','wpyelp_footer_rated');formData.append('_ajax_nonce','" . esc_js( wp_create_nonce( 'wpyelp_footer_rated' ) ) . "');fetch('" . esc_js( admin_url( 'admin-ajax.php' ) ) . "',{method:'POST',body:formData,credentials:'same-origin'});var parent=ratingLink.parentElement;if(parent){parent.textContent=ratingLink.getAttribute('data-rated');}});})();"
+		);
+
+		return '<span id="footer-thankyou">' . $footer_text . '</span>';
+	}
+
+	/**
+	 * Remember that the footer review link was clicked.
+	 */
+	public function ajax_footer_rated() {
+		check_ajax_referer( 'wpyelp_footer_rated' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( -1 );
+		}
+		update_option( 'wpyelp_admin_footer_text_rated', '1' );
+		wp_die();
 	}
 
 }

@@ -173,7 +173,8 @@ if ( $wpyelp_badge_phase === 'open' ) {
 	$badgeabovewide2     = '';
 	$badgeabovewideclose = '';
 	if ( $template_misc_array['blocation'] === 'abovewide' ) {
-		$badge_style        .= '.wprev_outer_wb {flex-direction: column !important;}.wprev_badge_div.badgeleft {margin-left: auto !important;margin-right: auto !important;}.wprev_badge_div.badgeleft {margin: 0px 46px !important;}.wprev-yelp-place {justify-content: space-between !important;align-items: center !important;}.wprev-yelp-leftboth {display: flex !important;}  @media only screen and (max-width: 600px) {.wprev-yelp-place {flex-direction: column;}}';
+		$wprev_outer_wb_class .= ' wprev_badge_abovewide';
+		$badge_style          .= '.wprev_outer_wb {flex-direction: column !important;}.wprev-yelp-place {justify-content: space-between !important;align-items: center !important;}.wprev-yelp-leftboth {display: flex !important;}  @media only screen and (max-width: 600px) {.wprev-yelp-place {flex-direction: column;}}';
 		$badgeabovewide1     = '<div class="wprev-yelp-leftboth">';
 		$badgeabovewide2     = '<div class="wprev-yelp-right">';
 		$badgeabovewideclose = '</div>';

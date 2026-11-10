@@ -459,6 +459,38 @@
 			var style = $( "#wpyelp_template_style" ).val();
 			note.text( msg.replace( "%s", style ) ).css( "display", "inline" );
 		}
+		function showProSliderSaveNote(){
+			var note = $( "#wprevpro_pro_save_note" );
+			note.text( "Slider - Advanced is available in Pro. Please choose Grid or Slider - Normal." ).css( "display", "inline" );
+		}
+		function updateProSliderNote(sliderType){
+			if(sliderType === 'sli'){
+				$( "#wpyelp_t_createslider" ).addClass('wprevpro-pro-selected');
+				$( "#wprevpro_pro_slider_note" ).show();
+			} else {
+				$( "#wpyelp_t_createslider" ).removeClass('wprevpro-pro-selected');
+				$( "#wprevpro_pro_slider_note" ).hide();
+			}
+		}
+		function toggleSliderSettings(){
+			var sliderType = $( "#wpyelp_t_createslider" ).val();
+			updateProSliderNote(sliderType);
+			if(sliderType === 'no'){
+				$('#slidersettingsrow').hide();
+				$('#wpyelp_t_numslides_label').hide();
+				$('#wpyelp_t_numslides').hide();
+			} else {
+				$('#slidersettingsrow').show();
+				$('#wpyelp_t_numslides_label').show();
+				$('#wpyelp_t_numslides').show();
+			}
+			if(sliderType === 'sli'){
+				$('.slickdiv').show();
+			} else {
+				$('.slickdiv').hide();
+			}
+		}
+
 
 		function changepreviewhtml(){
 			var templatenum = $( "#wpyelp_template_style" ).val();
@@ -962,7 +994,13 @@
 		// "Update" button: save via ajax, then render the returned preview (matches TripAdvisor's single Update button).
 		$( "#wpyelp_addnewtemplate_update" ).click(function(e){
 			e.preventDefault();
-			if(isProOnlyTemplateStyle($( "#wpyelp_template_style" ).val())){
+						if($( "#wpyelp_t_createslider" ).val() === 'sli'){
+				e.preventDefault();
+				$( "#wprevpro_pro_slider_note" ).show();
+				showProSliderSaveNote();
+				return;
+			}
+if(isProOnlyTemplateStyle($( "#wpyelp_template_style" ).val())){
 				$( "#wprevpro_pro_style_note" ).show();
 				showProSaveNote();
 				return;
@@ -1019,6 +1057,12 @@
 		
 		//form validation
 		$("#newtemplateform").submit(function(){
+			if($( "#wpyelp_t_createslider" ).val() === 'sli'){
+				$( "#wprevpro_pro_slider_note" ).show();
+				showProSliderSaveNote();
+				return false;
+			}
+
 			if(isProOnlyTemplateStyle($( "#wpyelp_template_style" ).val())){
 				$( "#wprevpro_pro_style_note" ).show();
 				showProSaveNote();
@@ -1038,6 +1082,23 @@
 
 		});
 		
+		
+		$( "#wpyelp_t_createslider" ).on('change', toggleSliderSettings);
+		toggleSliderSettings();
+
+		$('input[type=radio][name=wpyelp_sliderautoplay]').on('change', function() {
+			$(".timedelay").toggleClass("wprevhiddenClass", this.value !== 'yes');
+		});
+
+		$(document).on('click', '.wprevpro-pro-locked', function(e) {
+			e.preventDefault();
+			openpopup(
+				"Upgrade Needed",
+				'<p>This slider option is available in WP Review Slider Pro. Upgrade to unlock fade animation, more slides, advanced sliders, and custom breakpoints.</p>',
+				'<a class="button dashicons-before dashicons-cart" href="https://wpreviewslider.com/" target="_blank" rel="noopener noreferrer">Upgrade Here</a>'
+			);
+		});
+
 		//widget radio clicked
 		$('input[type=radio][name=wpyelp_template_type]').change(function() {
 			checkwidgetradio();
