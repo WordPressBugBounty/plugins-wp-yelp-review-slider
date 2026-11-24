@@ -4,7 +4,7 @@ Donate link: https://wpreviewslider.com/
 Tags: yelp reviews, review slider, business reviews, testimonials, social proof
 Requires at least: 3.0.1
 Tested up to: 7.0
-Stable tag: 9.6
+Stable tag: 9.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,18 @@ We are always looking for features to add! Post on the support forum or contact 
 7. Yelp summary badge beside a Style 6 layout, with your rating, review count, and Review us button.
 
 == Changelog ==
+= 9.7 =
+* Added previews of Pro template styles 16 and 17 on the Templates page.
+* Added a Setup Wizard, opened from the Welcome page, that downloads your Yelp reviews, helps you pick a look, and adds them to a page.
+* Yelp downloads no longer time out. Yelp can take from a few minutes to a couple of hours, so the download keeps going in the background and saves your reviews when Yelp finishes.
+* Added a Header Options tab on the Templates page that previews the Pro header, search, sort, and filter options.
+* Added a rating request to the admin footer on the plugin's pages.
+* The Card style (Style 6) now uses fixed review text and date sizes, so it looks the same with any theme.
+* Fixed the Card style (Style 6) grid stacking into one column on some themes when the rating badge is beside the reviews.
+* Fixed the verified check mark sitting lower than the stars in the Card style (Style 6) with some themes.
+* The Yelp logo on Style 1 reviews is now 26px tall, the same as the Card style (Style 6).
+* The logo in the Above Wide badge now lines up with the right edge of the button below it.
+
 = 9.6 =
 * Added a WP Yelp Review Slider block so a saved template can be inserted in the block editor.
 * The block shows the selected template in the editor.

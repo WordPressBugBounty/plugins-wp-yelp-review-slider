@@ -153,6 +153,16 @@ if ( $wpyelp_badge_phase === 'open' ) {
 		}
 	}
 
+	/**
+	 * Filters the badge's average rating and total. The setup wizard uses it to
+	 * preview a badge with sample numbers before the real reviews have downloaded.
+	 *
+	 * @since 9.7
+	 * @param array  $avg_total  array( average, total ).
+	 * @param string $templaceid Source page id the template is filtered to.
+	 */
+	list( $badgeavg, $badgetotal ) = apply_filters( 'wpyelp_badge_avg_total', array( $badgeavg, $badgetotal ), $templaceid );
+
 	if ( $template_misc_array['blocation'] === 'leftmid' || $template_misc_array['blocation'] === 'rightmid' ) {
 		$badge_style .= '.wprev_outer_wb {align-items: center !important;}';
 	}
@@ -178,6 +188,8 @@ if ( $wpyelp_badge_phase === 'open' ) {
 		$badgeabovewide1     = '<div class="wprev-yelp-leftboth">';
 		$badgeabovewide2     = '<div class="wprev-yelp-right">';
 		$badgeabovewideclose = '</div>';
+		// Wide badge: right-align the logo above the button.
+		$badge_style .= '.wprev_badge_abovewide .wprev-yelp-place > .wprev-yelp-right {display: flex !important;flex-direction: column !important;align-items: flex-end !important;}';
 	}
 
 	$bimgsize = 50;

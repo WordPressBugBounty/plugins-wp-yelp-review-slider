@@ -193,6 +193,7 @@
 		}
 		
 		foreach ( $totalreviewschunked as $reviewschunked ){
+			$rowarray = array(); // Start each slide with empty rows.
 			$totalreviewstemp = $reviewschunked;
 			
 			//need to break $totalreviewstemp up based on how many rows, create an multi array containing them

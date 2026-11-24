@@ -399,3 +399,6 @@ span.svgicons.svg-wprsp-verified {
     line-height: 24px;
     z-index: 999999;
 }
+
+/* Style 1: the site logo is 26px tall, the same as the Card style (Style 6). */
+img.wpyelp_t1_yelp_logo{height:26px;width:auto}

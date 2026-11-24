@@ -102,8 +102,11 @@ include 'tabmenu.php';
 							$total  = isset( $source['total'] ) ? $source['total'] : '';
 							$avg_total_label = ( $avg !== '' || $total !== '' ) ? esc_html( $avg ) . ' / ' . esc_html( $total ) : '—';
 							$del_url = add_query_arg( 'pageid', rawurlencode( $pageid ), $del_base );
+							// A download DataForSEO is still working on, or how the last one failed.
+							$wpyelp_task = $this->wpyelp_yelp_task( $pageid );
+							$wpyelp_err  = ( ! $wpyelp_task && ! empty( $source['last_error'] ) ) ? $source['last_error'] : '';
 							?>
-							<tr data-pageid="<?php echo esc_attr( $pageid ); ?>">
+							<tr data-pageid="<?php echo esc_attr( $pageid ); ?>"<?php echo $wpyelp_task ? ' data-pending="' . esc_attr( (int) $wpyelp_task['started'] ) . '"' : ''; ?>>
 								<td>
 									<?php echo esc_html( $bname ); ?>
 									<?php if ( $url ) : ?>
@@ -116,7 +119,7 @@ include 'tabmenu.php';
 									<button type="button" class="button button-primary downloadrevs" data-pageid="<?php echo esc_attr( $pageid ); ?>"><?php esc_html_e( 'Download Reviews', 'wp-yelp-reviews' ); ?></button>
 									<span class="buttonloader2 wprevloader"></span>
 									<a class="button" style="color:#a00;" href="<?php echo esc_url( $del_url ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete this source and its reviews?', 'wp-yelp-reviews' ) ); ?>');"><?php esc_html_e( 'Delete', 'wp-yelp-reviews' ); ?></a>
-									<span class="yelp-source-msg"></span>
+									<span class="yelp-source-msg"<?php echo $wpyelp_err ? ' style="color:#a00;"' : ''; ?>><?php echo esc_html( $wpyelp_err ); ?></span>
 								</td>
 							</tr>
 							<?php

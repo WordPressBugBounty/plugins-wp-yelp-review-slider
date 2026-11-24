@@ -23,14 +23,17 @@
 <img class="wprev_headerimg" src="<?php echo plugin_dir_url( __FILE__ ) . 'logo.png?v='.$this->version; ?>">
 <?php 
 include("tabmenu.php");
-?>	
+?>
+<?php $wpyelp_wizard_done = WP_Yelp_Review_Wizard::is_done(); ?>
+
 <div class="welcomecontainer wpfbr_margin10 w3-row-padding w3-section w3-stretch">
 
-<div class="w3-col s12 m6 w3-container ">
+<div class="w3-col s12 m12 l4 w3-container ">
 <div class="welcomediv w3-white w3-border w3-border-light-gray2 w3-round-small">
 	<h3><?php _e('Welcome!', 'wp-yelp-reviews'); ?> </h3>
-	<p><?php _e('Thank you for being an awesome WP Review Slider customer! If you have trouble, please don\'t hesitate to contact me.', 'wp-yelp-reviews'); ?> </p>
-	<h3><?php _e('Getting Started:', 'wp-yelp-reviews'); ?> </h3>
+	<p><?php _e('Thank you for being an awesome WP Review Slider customer! If you have trouble, please don\'t hesitate to contact me. Follow the Wizard or use the steps below to get started.', 'wp-yelp-reviews'); ?> </p>
+	<a class="button button-primary wpyelp-wizard-cta__btn" href="<?php echo esc_url( WP_Yelp_Review_Wizard::url() ); ?>"><?php echo esc_html( $wpyelp_wizard_done ? __( 'Run the Setup Wizard', 'wp-yelp-review-slider' ) : __( 'Start the Setup Wizard', 'wp-yelp-review-slider' ) ); ?></a>
+	<h3><?php _e('Getting Started Steps:', 'wp-yelp-reviews'); ?> </h3>
 	<p><?php _e('1) Use the "Get Yelp Reviews" page to download your reviews and save them to your database.', 'wp-yelp-reviews'); ?></p>
 	<p><?php _e('2) Once downloaded, the reviews should show up on the "Review List" page of the plugin.', 'wp-yelp-reviews'); ?> </p>
 	<p><?php _e('3) Create a Review Slider or Grid for your site on the "Templates" page. By default the review template will show all your reviews; you can use the filters to only show the reviews you want.', 'wp-yelp-reviews'); ?> </p>
@@ -40,25 +43,9 @@ include("tabmenu.php");
 
 </div>
 </div>
-<div class="w3-col s12 m6 welcomediv w3-container ">
+<div class="w3-col s12 m12 l8 welcomediv w3-container ">
 <div class="welcomediv w3-white w3-border w3-border-light-gray2 w3-round-small">
-<a id="provimg" href="https://wpreviewslider.com/" target="_blank"><img class="wprev_wpproimg" src="<?php echo plugin_dir_url( __FILE__ ) . 'sitelogo4.png?v='.$this->version; ?>"></a>
-	<h3><?php _e('Pro Version Features!', 'wp-yelp-reviews'); ?> </h3>
-	<ul style="list-style-type: circle;margin-left: 20px;">
-	<li><?php _e('Personal support from the developer! I\'ll even help set it up!', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Download all your Yelp reviews from multiple locations plus images!', 'wp-yelp-reviews'); ?> </li>
-	<li><?php _e('Also get reviews from Google, Facebook, TripAdvisor, and 90+ other sites!', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Show reviews in a Grid, Rows, Slider, Masonry, with endless scroll and different pagination options!', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Hide certain reviews from displaying.', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Review submission form with a review gate to catch low reviews before they get to social media!', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Manually add reviews to your database or upload a CSV file.', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Access 11 Review Template styles and even create a child theme.', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Lots of cool badges, floats, and pop-ins!', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Advanced slider controls like: Autoplay, slide animation, timing, hide navigation arrows and dots, adjust slider height and more.', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Tons of filters like review length, source page, rating, date, keywords, tags, or even individually choose which reviews you want to display.', 'wp-yelp-reviews'); ?></li>
-	<li><?php _e('Automatically create Google schema review snippet markup!', 'wp-yelp-reviews'); ?></li>
-	<li><?php printf( __( 'See all features %1$shere%2$s. Plus get access to all new features I add in the future!', 'wp-yelp-reviews' ), '<b><a href="https://wpreviewslider.com/features/" target="_blank">', '</a></b>' ); ?></li>
-</ul>
+<?php include plugin_dir_path( __FILE__ ) . 'other_plugins.php'; ?>
 
 </div>
 </div>

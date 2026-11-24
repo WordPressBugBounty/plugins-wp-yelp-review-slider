@@ -70,7 +70,7 @@ class WP_Yelp_Review {
 	public function __construct() {
 
 		$this->_token = 'wp-yelp-review-slider';
-		$this->version = '9.6';
+		$this->version = '9.7';
 		//using this for development
 		//$this->version = time();
 
@@ -84,6 +84,7 @@ class WP_Yelp_Review {
 		}
 		$this->define_public_hooks();
 		$this->define_block_hooks();
+		$this->define_cron_hooks();
 		//save version number to db
 		$this->_log_version_number();
 
@@ -313,6 +314,11 @@ class WP_Yelp_Review {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-wp-yelp-review-slider-admin.php';
 
 		/**
+		 * Setup wizard screen and its AJAX handlers.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-wp-yelp-review-slider-wizard.php';
+
+		/**
 		 * Analytics AJAX handlers.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-wp-yelp-review-slider-analytics.php';
@@ -369,6 +375,27 @@ class WP_Yelp_Review {
 	}
 
 	/**
+	 * Register the WP-Cron hooks.
+	 *
+	 * @since    9.7
+	 * @access   private
+	 */
+	private function define_cron_hooks() {
+		// Registered on every request (not only in wp-admin) so wp-cron.php can run it.
+		$this->loader->add_action( WP_Yelp_Review_Admin::YELP_TASK_CRON, $this, 'run_yelp_task_check' );
+	}
+
+	/**
+	 * WP-Cron: finish Yelp downloads that DataForSEO is still working on.
+	 *
+	 * @since 9.7
+	 */
+	public function run_yelp_task_check() {
+		$admin = new WP_Yelp_Review_Admin( $this->get_token(), $this->get_version() );
+		$admin->wpyelp_check_yelp_tasks();
+	}
+
+	/**
 	 * Register all of the hooks related to the admin area functionality
 	 * of the plugin.
 	 *
@@ -413,6 +440,9 @@ class WP_Yelp_Review {
 		//add ajax for adding a Yelp source and downloading its reviews
 		$this->loader->add_action( 'wp_ajax_wpyelp_add_source', $plugin_admin, 'wpyelp_ajax_add_source' );
 		$this->loader->add_action( 'wp_ajax_wpyelp_download_source', $plugin_admin, 'wpyelp_ajax_download_source' );
+		// Start a download, then check on it until DataForSEO has the reviews (no long-running request).
+		$this->loader->add_action( 'wp_ajax_wpyelp_download_start', $plugin_admin, 'wpyelp_ajax_download_start' );
+		$this->loader->add_action( 'wp_ajax_wpyelp_download_poll', $plugin_admin, 'wpyelp_ajax_download_poll' );
 
 		//add ajax for saving an edited review
 		$this->loader->add_action( 'wp_ajax_wpyelp_save_review', $plugin_admin, 'wpyelp_savereview_ajax' );
@@ -420,7 +450,19 @@ class WP_Yelp_Review {
 		//add ajax for saving a template and rendering a live preview
 		$this->loader->add_action( 'wp_ajax_wpyelp_save_template', $plugin_admin, 'wpyelp_savetemplate_ajax' );
 		$this->loader->add_action( 'wp_ajax_wpyelp_get_preview', $plugin_admin, 'wpyelp_previewtemplate_ajax' );
-		
+
+		//setup wizard (opened from the Welcome page)
+		$plugin_wizard = new WP_Yelp_Review_Wizard( $plugin_admin, $this->get_version() );
+		$this->loader->add_action( 'admin_menu', $plugin_wizard, 'menu' );
+		$this->loader->add_filter( 'admin_title', $plugin_wizard, 'admin_title', 10, 2 );
+		$this->loader->add_filter( 'parent_file', $plugin_wizard, 'parent_file' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_wizard, 'assets' );
+		$this->loader->add_action( 'wp_ajax_wpyelp_wizard_get_reviews', $plugin_wizard, 'ajax_get_reviews' );
+		$this->loader->add_action( 'wp_ajax_wpyelp_wizard_poll_reviews', $plugin_wizard, 'ajax_poll_reviews' );
+		$this->loader->add_action( 'wp_ajax_wpyelp_wizard_save_template', $plugin_wizard, 'ajax_save_template' );
+		$this->loader->add_action( 'wp_ajax_wpyelp_wizard_create_page', $plugin_wizard, 'ajax_create_page' );
+		$this->loader->add_action( 'wp_ajax_wpyelp_wizard_finish', $plugin_wizard, 'ajax_finish' );
+
 
 		//add download csv file function wpyelp_download_csv
 		$this->loader->add_action( 'plugins_loaded', $plugin_admin, 'wpyelp_download_csv' ); 

@@ -97,6 +97,25 @@
 		} );
 	}
 
+	/**
+	 * Open "read more" links in reviews that arrive with the preview.
+	 *
+	 * The public script binds them on page load only, so links inserted later
+	 * (block editor, setup wizard) would do nothing.
+	 *
+	 * @param {HTMLElement} root Preview container.
+	 */
+	function bindReadMore( root ) {
+		var doc = root && root.ownerDocument ? root.ownerDocument : document;
+		$( doc ).off( 'click.wprevrdmore', '.wprs_rd_more' ).on( 'click.wprevrdmore', '.wprs_rd_more', function () {
+			var $link = $( this );
+			$link.hide();
+			$link.next( 'span' ).show();
+			// Let the slider grow to fit the longer review.
+			$link.closest( '.wprev-slider, .wprev-slider-widget, .srfw-slider' ).css( 'height', 'auto' );
+		} );
+	}
+
 	window.wprevInitReviewSliders = function ( root ) {
 		var $root = root ? $( root ) : $( document );
 		if ( $.fn && $.fn.wprs_unslider ) {
@@ -105,5 +124,6 @@
 			} );
 		}
 		refreshMediaLightbox( root );
+		bindReadMore( root );
 	};
 }( window.jQuery ) );

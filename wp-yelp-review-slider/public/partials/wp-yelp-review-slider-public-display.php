@@ -171,6 +171,17 @@
 			);
 		}
 
+		/**
+		 * Filters the reviews a template shows. The setup wizard uses it to preview
+		 * a template with sample reviews before the real ones have downloaded.
+		 *
+		 * @since 9.7
+		 * @param array  $totalreviews Review rows.
+		 * @param int    $tid          Template id.
+		 * @param string $filtersource Source page id the template is filtered to.
+		 */
+		$totalreviews = apply_filters( 'wpyelp_template_reviews', $totalreviews, $tid, $filtersource );
+
 		// Open badge wrapper (left / above) before reviews.
 		$wpyelp_badge_phase = 'open';
 		$badgehtml = '';
@@ -274,6 +285,7 @@
 			}
 		
 		foreach ( $totalreviewschunked as $reviewschunked ){
+			$rowarray = array(); // Start each slide with empty rows.
 			$totalreviewstemp = $reviewschunked;
 			
 			//need to break $totalreviewstemp up based on how many rows, create an multi array containing them

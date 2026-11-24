@@ -117,7 +117,7 @@ class WP_Yelp_Review_Admin {
 				wp_enqueue_style( $this->_token."_style1", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template1.css', array(), $this->version, 'all' );
 				wp_enqueue_style( $this->_token."_style6", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
 				if ( $_GET['page'] == 'wp_yelp-templates_posts' ) {
-					wp_enqueue_style( $this->_token . '_pro_style_preview', plugin_dir_url( __FILE__ ) . 'css/wprev_pro_style_preview.css', array( $this->_token . '_style1', $this->_token . '_style6' ), $this->version, 'all' );
+					wp_enqueue_style( $this->_token . '_pro_style_preview', plugin_dir_url( __FILE__ ) . 'css/wprev_pro_style_preview.css', array( $this->_token . '_style1', $this->_token . '_style6' ), filemtime( plugin_dir_path( __FILE__ ) . 'css/wprev_pro_style_preview.css' ), 'all' );
 				}
 				//slider styles so the live preview matches the front end
 				wp_enqueue_style( $this->_token."_unslider", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprs_unslider.css', array(), $this->version, 'all' );
@@ -1540,12 +1540,43 @@ class WP_Yelp_Review_Admin {
 			sleep( 1 );
 		}
 
+		$stored                = $this->wpyelp_store_yelp_reviews( $all_reviews, $pageid, $pagename, $listedurl, $source_avg, $source_total );
+		$stored['crawl_debug'] = $crawl_debug_log;
+		return $stored;
+	}
+
+	/**
+	 * Save downloaded Yelp reviews for one source, skipping ones already saved,
+	 * and store the source's Yelp average and total for badges.
+	 *
+	 * Used by the blocking download above and by the DataForSEO task download
+	 * (wpyelp_yelp_download_start / wpyelp_yelp_download_poll).
+	 *
+	 * @since 9.7
+	 * @param array  $all_reviews  Reviews from wpyelp_map_crawler_reviews().
+	 * @param string $pageid       Page id (biz slug).
+	 * @param string $pagename     Business name.
+	 * @param string $listedurl    Yelp business URL.
+	 * @param string $source_avg   Average rating on Yelp.
+	 * @param string $source_total Total reviews on Yelp.
+	 * @return array ack, ackmsg, avg, total
+	 */
+	public function wpyelp_store_yelp_reviews( $all_reviews, $pageid, $pagename, $listedurl, $source_avg, $source_total ) {
+		global $wpdb;
+		$table_name  = $wpdb->prefix . 'wpyelp_reviews';
+		$totalinsert = 0;
+		$min_reviews = 10;
+		$result      = array(
+			'ack'    => 'success',
+			'ackmsg' => '',
+			'avg'    => '',
+			'total'  => '',
+		);
+
 		// Free version: keep at most 10 reviews.
 		if ( count( $all_reviews ) > $min_reviews ) {
 			$all_reviews = array_slice( $all_reviews, 0, $min_reviews );
 		}
-
-		$result['crawl_debug'] = $crawl_debug_log;
 
 		if ( empty( $all_reviews ) ) {
 			$result['ack']    = 'error';
@@ -1925,6 +1956,26 @@ class WP_Yelp_Review_Admin {
 				$crawlerreviewsarray = $crawlerresultarray['reviews'];
 			}
 
+			$result['reviews'] = $this->wpyelp_map_crawler_reviews( $crawlerreviewsarray, $listedurl );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Map reviews from the crawl server to the shape wpyelp_store_yelp_reviews() saves.
+	 *
+	 * @since 9.7
+	 * @param array  $crawlerreviewsarray Reviews as the crawl server sends them.
+	 * @param string $listedurl           Yelp business URL.
+	 * @return array
+	 */
+	public function wpyelp_map_crawler_reviews( $crawlerreviewsarray, $listedurl ) {
+		$reviewsarray = array();
+		if ( ! is_array( $crawlerreviewsarray ) ) {
+			return $reviewsarray;
+		}
+
 			foreach ( $crawlerreviewsarray as $review ) {
 				$user_name = isset( $review['user_name'] ) ? trim( $review['user_name'] ) : '';
 				if ( $user_name === '' ) {
@@ -1959,12 +2010,378 @@ class WP_Yelp_Review_Admin {
 				);
 			}
 
-			$result['reviews'] = $reviewsarray;
+		return $reviewsarray;
+	}
+
+	/**
+	 * Crawl server URL for a Yelp request from this site.
+	 *
+	 * @since 9.7
+	 * @param array $args Query arguments (stype, scrapeurl, task_id, ...).
+	 * @return string
+	 */
+	private function wpyelp_crawl_url( $args ) {
+		$ip_server = ( isset( $_SERVER['SERVER_ADDR'] ) && $_SERVER['SERVER_ADDR'] != '' ) ? $_SERVER['SERVER_ADDR'] : get_site_url();
+		$query     = array_merge(
+			array(
+				'rip'  => $ip_server,
+				'surl' => get_site_url(),
+			),
+			$args,
+			array(
+				'sfp'   => 'free',
+				'nobot' => '1',
+			)
+		);
+		return 'https://crawl.ljapps.com/crawlrevs?' . http_build_query( $query, '', '&', PHP_QUERY_RFC3986 );
+	}
+
+	/**
+	 * GET the crawl server and decode its JSON answer.
+	 *
+	 * @since 9.7
+	 * @param string $url     Request URL.
+	 * @param int    $timeout Seconds.
+	 * @return array{ok:bool,data:array|null,raw:string,error:string} error is 'not json' when the server answered with something else.
+	 */
+	private function wpyelp_crawl_get( $url, $timeout ) {
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Content-Type' => ' application/json',
+					'Accept'       => 'application/json',
+				),
+			)
+		);
+		if ( is_wp_error( $response ) ) {
+			return array( 'ok' => false, 'data' => null, 'raw' => '', 'error' => $response->get_error_message() );
+		}
+		$raw  = (string) wp_remote_retrieve_body( $response );
+		$data = json_decode( $raw, true );
+		if ( ! is_array( $data ) ) {
+			return array( 'ok' => false, 'data' => null, 'raw' => $raw, 'error' => 'not json' );
+		}
+		return array( 'ok' => true, 'data' => $data, 'raw' => $raw, 'error' => '' );
+	}
+
+	/**
+	 * Option that remembers running DataForSEO tasks, keyed by page id.
+	 *
+	 * An option rather than a transient: Yelp can take hours, and transients
+	 * can be dropped early by object caches.
+	 */
+	const YELP_TASKS_OPTION = 'wpyelp_yelp_tasks';
+
+	/**
+	 * Seconds to keep checking a Yelp task before giving up (one day).
+	 */
+	const YELP_TASK_MAX_AGE = 86400;
+
+	/**
+	 * WP-Cron hook that checks waiting Yelp tasks.
+	 */
+	const YELP_TASK_CRON = 'wpyelp_check_yelp_tasks';
+
+	/**
+	 * All waiting Yelp tasks.
+	 *
+	 * @since 9.7
+	 * @return array<string,array{task_id:string,started:int,url:string,name:string,status:string}>
+	 */
+	public function wpyelp_yelp_tasks() {
+		$tasks = get_option( self::YELP_TASKS_OPTION, array() );
+		return is_array( $tasks ) ? $tasks : array();
+	}
+
+	/**
+	 * The waiting Yelp task for a source, or null.
+	 *
+	 * @since 9.7
+	 * @param string $pageid Page id.
+	 * @return array|null
+	 */
+	public function wpyelp_yelp_task( $pageid ) {
+		$tasks = $this->wpyelp_yelp_tasks();
+		if ( isset( $tasks[ $pageid ] ) && is_array( $tasks[ $pageid ] ) && ! empty( $tasks[ $pageid ]['task_id'] ) ) {
+			return $tasks[ $pageid ];
+		}
+		return null;
+	}
+
+	/**
+	 * Save (or with null, forget) a source's waiting task, and make sure the
+	 * background check is scheduled while any task is waiting.
+	 *
+	 * @param string     $pageid Page id.
+	 * @param array|null $task   Task.
+	 */
+	private function wpyelp_yelp_save_task( $pageid, $task ) {
+		$tasks = $this->wpyelp_yelp_tasks();
+		if ( null === $task ) {
+			unset( $tasks[ $pageid ] );
+		} else {
+			$tasks[ $pageid ] = $task;
+		}
+		update_option( self::YELP_TASKS_OPTION, $tasks, false );
+		if ( $tasks && ! wp_next_scheduled( self::YELP_TASK_CRON ) ) {
+			wp_schedule_single_event( time() + 5 * MINUTE_IN_SECONDS, self::YELP_TASK_CRON );
+		}
+	}
+
+	/**
+	 * Remember how a source's last download ended, so the Get Yelp Reviews page
+	 * can show it after the background check finished it.
+	 *
+	 * @param string $pageid Page id.
+	 * @param array  $result Download result.
+	 */
+	private function wpyelp_yelp_note_result( $pageid, $result ) {
+		$crawls = $this->wpyelp_get_crawls();
+		if ( ! isset( $crawls[ $pageid ] ) ) {
+			return;
+		}
+		if ( isset( $result['ack'] ) && 'error' === $result['ack'] ) {
+			$crawls[ $pageid ]['last_error'] = isset( $result['ackmsg'] ) ? wp_strip_all_tags( (string) $result['ackmsg'] ) : '';
+		} else {
+			unset( $crawls[ $pageid ]['last_error'] );
+		}
+		$this->wpyelp_save_crawls( $crawls );
+	}
+
+	/**
+	 * A pending answer for a waiting task.
+	 *
+	 * @param array $task Task.
+	 * @return array
+	 */
+	private function wpyelp_yelp_pending( $task ) {
+		return array(
+			'ack'     => 'pending',
+			'ackmsg'  => '',
+			'status'  => isset( $task['status'] ) ? (string) $task['status'] : '',
+			'started' => isset( $task['started'] ) ? (int) $task['started'] : time(),
+		);
+	}
+
+	/**
+	 * Start downloading reviews for a saved Yelp source.
+	 *
+	 * Yelp reviews come from DataForSEO, which takes anywhere from a few minutes
+	 * to a couple of hours. The crawl server hands the job over and answers with
+	 * a task id right away (yelpasync), so no request waits for the reviews.
+	 * wpyelp_yelp_download_poll() checks on it: the browser does while the page
+	 * is open, and WP-Cron does every five minutes until it's done.
+	 *
+	 * @since 9.7
+	 * @param string $pageid Page id of a saved source.
+	 * @return array ack ('success', 'pending' or 'error'), ackmsg, avg, total, status, started
+	 */
+	public function wpyelp_yelp_download_start( $pageid ) {
+		$crawls = $this->wpyelp_get_crawls();
+		if ( $pageid === '' || empty( $crawls[ $pageid ]['url'] ) ) {
+			return array( 'ack' => 'error', 'ackmsg' => __( 'Source not found. Add the URL again.', 'wp-yelp-reviews' ) );
+		}
+		$url  = strtok( trim( $crawls[ $pageid ]['url'] ), '?' );
+		$name = ! empty( $crawls[ $pageid ]['businessname'] ) ? $crawls[ $pageid ]['businessname'] : $this->wpyelp_extract_businessname_from_url( $url );
+
+		// A task that is still waiting will finish; asking again would only pay for a second one.
+		$task = $this->wpyelp_yelp_task( $pageid );
+		if ( $task && ( time() - (int) $task['started'] ) < self::YELP_TASK_MAX_AGE ) {
+			return $this->wpyelp_yelp_pending( $task );
 		}
 
+		$crawl = $this->wpyelp_crawl_get(
+			$this->wpyelp_crawl_url(
+				array(
+					'scrapeurl'        => $url,
+					'stype'            => 'yelp',
+					'nhful'            => '',
+					'locationtype'     => '',
+					'scrapequery'      => '',
+					'tempbusinessname' => '',
+					'pagenum'          => '1',
+					'nextpageurl'      => '',
+					'iscron'           => 'no',
+					'yelpasync'        => '1',
+				)
+			),
+			60
+		);
+
+		if ( ! $crawl['ok'] ) {
+			if ( 'not json' !== $crawl['error'] ) {
+				return array( 'ack' => 'error', 'ackmsg' => 'Error 0001a: trouble contacting crawling server with remote_get. Please try again or contact support. ' . $crawl['error'] );
+			}
+			// Not JSON, for example a bot check page: the older download also tries the backup crawl server.
+			return $this->wpyelp_download_one_source( $url, $pageid, $name );
+		}
+
+		$data = $crawl['data'];
+		if ( isset( $data['ack'] ) && 'error' === $data['ack'] ) {
+			return array( 'ack' => 'error', 'ackmsg' => 'Error 0002: ' . ( isset( $data['ackmessage'] ) ? $data['ackmessage'] : '' ) );
+		}
+		$res = ( isset( $data['result'] ) && is_array( $data['result'] ) ) ? $data['result'] : array();
+		if ( isset( $res['ack'] ) && 'error' === $res['ack'] ) {
+			return array( 'ack' => 'error', 'ackmsg' => 'Error 0003: Please try again. ' . ( isset( $res['ackmsg'] ) ? $res['ackmsg'] : '' ) );
+		}
+		if ( ! empty( $res['task_id'] ) ) {
+			$task = array(
+				'task_id' => sanitize_text_field( (string) $res['task_id'] ),
+				'started' => time(),
+				'url'     => $url,
+				'name'    => $name,
+				'status'  => '',
+			);
+			$this->wpyelp_yelp_save_task( $pageid, $task );
+			$crawls = $this->wpyelp_get_crawls();
+			unset( $crawls[ $pageid ]['last_error'] );
+			$this->wpyelp_save_crawls( $crawls );
+			return $this->wpyelp_yelp_pending( $task );
+		}
+		if ( isset( $res['reviews'] ) && is_array( $res['reviews'] ) && $res['reviews'] ) {
+			// A crawl server without task support answered with the reviews themselves.
+			return $this->wpyelp_yelp_save_crawl_result( $pageid, $name, $url, $res );
+		}
+		return array( 'ack' => 'error', 'ackmsg' => 'Error 0002b: trouble finding reviews. Contact support with this error code and the URL you are using.' );
+	}
+
+	/**
+	 * Check once on a download started with wpyelp_yelp_download_start().
+	 *
+	 * @since 9.7
+	 * @param string $pageid Page id.
+	 * @return array ack ('success', 'pending' or 'error'), ackmsg, avg, total, status, started
+	 */
+	public function wpyelp_yelp_download_poll( $pageid ) {
+		$task = $this->wpyelp_yelp_task( $pageid );
+		if ( ! $task ) {
+			// Nothing waiting: the background check or another tab may have finished it.
+			$crawls = $this->wpyelp_get_crawls();
+			$source = isset( $crawls[ $pageid ] ) ? $crawls[ $pageid ] : array();
+			if ( ! empty( $source['last_error'] ) ) {
+				return array( 'ack' => 'error', 'ackmsg' => $source['last_error'] );
+			}
+			if ( ! empty( $source['last_download'] ) && ( time() - (int) $source['last_download'] ) < HOUR_IN_SECONDS ) {
+				return array(
+					'ack'    => 'success',
+					'ackmsg' => __( 'Reviews downloaded. Check the Review List page.', 'wp-yelp-reviews' ),
+					'avg'    => isset( $source['avg'] ) ? $source['avg'] : '',
+					'total'  => isset( $source['total'] ) ? $source['total'] : '',
+				);
+			}
+			return array( 'ack' => 'error', 'ackmsg' => __( 'This download is no longer running. Click Download Reviews to start it again.', 'wp-yelp-reviews' ) );
+		}
+
+		if ( ( time() - (int) $task['started'] ) > self::YELP_TASK_MAX_AGE ) {
+			$this->wpyelp_yelp_save_task( $pageid, null );
+			$result = array( 'ack' => 'error', 'ackmsg' => __( 'Yelp didn\'t send the reviews within a day. Click Download Reviews to try again.', 'wp-yelp-reviews' ) );
+			$this->wpyelp_yelp_note_result( $pageid, $result );
+			return $result;
+		}
+
+		$crawl = $this->wpyelp_crawl_get(
+			$this->wpyelp_crawl_url(
+				array(
+					'stype'   => 'yelp_poll',
+					'task_id' => $task['task_id'],
+				)
+			),
+			30
+		);
+		if ( ! $crawl['ok'] ) {
+			// One missed check isn't a failure. The next check tries again.
+			return $this->wpyelp_yelp_pending( $task );
+		}
+
+		$data = $crawl['data'];
+		if ( isset( $data['ack'] ) && 'error' === $data['ack'] ) {
+			$this->wpyelp_yelp_save_task( $pageid, null );
+			$msg    = isset( $data['ackmsg'] ) && '' !== $data['ackmsg'] ? $data['ackmsg'] : ( isset( $data['ackmessage'] ) ? $data['ackmessage'] : '' );
+			$result = array( 'ack' => 'error', 'ackmsg' => 'Error 0003: Please try again. ' . $msg );
+			$this->wpyelp_yelp_note_result( $pageid, $result );
+			return $result;
+		}
+		if ( empty( $data['completed'] ) ) {
+			$status = isset( $data['status'] ) ? sanitize_text_field( (string) $data['status'] ) : '';
+			if ( $status !== ( isset( $task['status'] ) ? $task['status'] : '' ) ) {
+				$task['status'] = $status;
+				$this->wpyelp_yelp_save_task( $pageid, $task );
+			}
+			return $this->wpyelp_yelp_pending( $task );
+		}
+
+		$this->wpyelp_yelp_save_task( $pageid, null );
+		$result = $this->wpyelp_yelp_save_crawl_result( $pageid, $task['name'], $task['url'], $data );
+		$this->wpyelp_yelp_note_result( $pageid, $result );
 		return $result;
 	}
-	
+
+	/**
+	 * WP-Cron: check every waiting Yelp task, save the ones that finished, and
+	 * check again in five minutes while any are still waiting.
+	 *
+	 * @since 9.7
+	 */
+	public function wpyelp_check_yelp_tasks() {
+		foreach ( array_keys( $this->wpyelp_yelp_tasks() ) as $pageid ) {
+			$this->wpyelp_yelp_download_poll( (string) $pageid );
+		}
+		if ( $this->wpyelp_yelp_tasks() && ! wp_next_scheduled( self::YELP_TASK_CRON ) ) {
+			wp_schedule_single_event( time() + 5 * MINUTE_IN_SECONDS, self::YELP_TASK_CRON );
+		}
+	}
+
+	/**
+	 * Save a finished crawl result (reviews, avg, total) for a source.
+	 *
+	 * @param string $pageid Page id.
+	 * @param string $name   Business name.
+	 * @param string $url    Yelp business URL.
+	 * @param array  $crawl  Crawl result with reviews, avg, total.
+	 * @return array
+	 */
+	private function wpyelp_yelp_save_crawl_result( $pageid, $name, $url, $crawl ) {
+		$reviews = $this->wpyelp_map_crawler_reviews( isset( $crawl['reviews'] ) ? $crawl['reviews'] : array(), $url );
+		return $this->wpyelp_store_yelp_reviews(
+			$reviews,
+			$pageid,
+			$name,
+			$url,
+			isset( $crawl['avg'] ) ? $crawl['avg'] : '',
+			isset( $crawl['total'] ) ? $crawl['total'] : ''
+		);
+	}
+
+	/**
+	 * AJAX: start downloading reviews for one saved source.
+	 */
+	public function wpyelp_ajax_download_start() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => 'Insufficient permissions.' ) );
+			wp_die();
+		}
+		check_ajax_referer( 'randomnoncestring', 'wpyelp_nonce' );
+		$pageid = isset( $_POST['pageid'] ) ? sanitize_text_field( wp_unslash( $_POST['pageid'] ) ) : '';
+		echo wp_json_encode( $this->wpyelp_yelp_download_start( $pageid ) );
+		wp_die();
+	}
+
+	/**
+	 * AJAX: check on a running download for one saved source.
+	 */
+	public function wpyelp_ajax_download_poll() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => 'Insufficient permissions.' ) );
+			wp_die();
+		}
+		check_ajax_referer( 'randomnoncestring', 'wpyelp_nonce' );
+		$pageid = isset( $_POST['pageid'] ) ? sanitize_text_field( wp_unslash( $_POST['pageid'] ) ) : '';
+		echo wp_json_encode( $this->wpyelp_yelp_download_poll( $pageid ) );
+		wp_die();
+	}
+
 	//for using curl instead of fopen
 	private function file_get_contents_curl($url) {
 		$ch = curl_init();
@@ -2989,6 +3406,21 @@ class WP_Yelp_Review_Admin {
 			die();
 		}
 
+		echo wp_json_encode( $this->wpyelp_save_template_fields( $formarray ) );
+		die();
+	}
+
+	/**
+	 * Insert or update a review template from Templates page field values.
+	 *
+	 * Shared by the Templates page (ajax save) and the setup wizard, so both
+	 * store templates the same way.
+	 *
+	 * @since 9.7
+	 * @param array $formarray Field name => value, as posted by the Templates page form.
+	 * @return array Save result with t_id and the rendered templatehtml.
+	 */
+	public function wpyelp_save_template_fields( $formarray ) {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'wpyelp_post_templates';
 
@@ -3176,8 +3608,7 @@ class WP_Yelp_Review_Admin {
 		$returnpreview               = $this->wpyelp_previewtemplate_ajax_get( absint( $t_id ) );
 		$returnarray['templatehtml'] = $returnpreview['templatehtml'];
 
-		echo wp_json_encode( $returnarray );
-		die();
+		return $returnarray;
 	}
 
 	/**

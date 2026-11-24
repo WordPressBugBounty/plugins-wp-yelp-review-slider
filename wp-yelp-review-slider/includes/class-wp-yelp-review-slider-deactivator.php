@@ -38,7 +38,10 @@ class WP_Yelp_Review_Deactivator {
     //use this function to unschedule it by passing the time and event name
     wp_unschedule_event($time_next_firing, "wpyelp_daily_event");
 	wp_clear_scheduled_hook('wpyelp_daily_event');
-	
+
+	// Stop checking on Yelp downloads that DataForSEO is still working on.
+	wp_clear_scheduled_hook( 'wpyelp_check_yelp_tasks' );
+
 	}
 
 }

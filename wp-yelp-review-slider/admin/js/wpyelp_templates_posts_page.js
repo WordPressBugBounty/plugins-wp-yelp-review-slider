@@ -291,7 +291,43 @@
 			<div class="indrevtxt wpproslider_t15_P_5 wprev_preview_tcolor2"><p class="wpproslider_t15_P_5 wprev_preview_tcolor2">'+sampltext+'</p></div>	\
 			<div class="wprevt15_icon_div"><img id="wprev_showicon" src="'+iconhref+'" alt="Yelp" class="wprevpro_t15_site_logo siteicon"></div>	\
 		</div></div>';
-		
+
+		var style16html = '<div class="wprevpro_t16_DIV_1 w3_wprs-col outerrevdiv" style="width: 100%;">' +
+		'<div class="indrevdiv wprevpro_t16_card wprev_preview_bg1 wprev_preview_bradius">' +
+			'<div class="wprevpro_t16_head">' +
+				'<span class="wprevpro_t16_stars">'+starhtml+''+verified1+'</span>' +
+				'<span class="wprevpro_t16_logo"><img id="wprev_showicon" src="'+iconhref+'" alt="Yelp" class="wprevpro_t16_site_logo siteicon"></span>' +
+			'</div>' +
+			'<div class="indrevtxt wprevpro_t16_text wprev_preview_tcolor1">'+sampltext+'</div>' +
+		'</div>' +
+		'<div class="wprevpro_t16_author">' +
+			'<div class="wprevpro_t16_avatar"><img src="'+avatarimg+'" alt="Avatar" width="64" height="64" class="wprevpro_t16_avatar_img wprevpro_avatarimg wprev_avatar_opt"></div>' +
+			'<div class="wprevpro_t16_meta">' +
+				'<div class="wprevpro_t16_name wprev_preview_tcolor2">'+displayname+'</div>' +
+				'<span class="wprevpro_t16_date wprev_preview_tcolor3">'+datehtml+'</span>' +
+			'</div>' +
+		'</div>' +
+		'</div>';
+
+		var style17html = '<div class="wprevpro_t17_DIV_1 w3_wprs-col outerrevdiv" style="width: 100%;">' +
+		'<div class="wprevpro_t17_layout">' +
+			'<aside class="wprevpro_t17_aside">' +
+				'<div class="wprevpro_t17_avatar"><img src="'+avatarimg+'" alt="Avatar" width="96" height="96" class="wprevpro_t17_avatar_img wprevpro_avatarimg wprev_avatar_opt"></div>' +
+			'</aside>' +
+			'<div class="indrevdiv wprevpro_t17_card wprev_preview_bg1 wprev_preview_bradius">' +
+				'<div class="wprevpro_t17_head">' +
+					'<span class="wprevpro_t17_stars">'+starhtml+''+verified1+'</span>' +
+					'<div class="wprevpro_t17_logo"><img id="wprev_showicon" src="'+iconhref+'" alt="Yelp" class="wprevpro_t17_site_logo siteicon"></div>' +
+				'</div>' +
+				'<div class="indrevtxt wprevpro_t17_text wprev_preview_tcolor1">'+sampltext+'</div>' +
+				'<div class="wprevpro_t17_footer">' +
+					'<div class="wprevpro_t17_name wprev_preview_tcolor2">'+displayname+'</div>' +
+					'<span class="wprevpro_t17_date wprev_preview_tcolor3">'+datehtml+'</span>' +
+				'</div>' +
+			'</div>' +
+		'</div>' +
+		'</div>';
+
 		changepreviewhtml();
 
 		function buildInitialsAvatarDataUri(name, size){
@@ -576,6 +612,14 @@
 					previewhtml = style15html;
 					$( ".wprevpre_bgcolor2" ).hide();
 					$( ".wprevpre_tcolor3" ).show();
+				} else if(templatenum=='16'){
+					previewhtml = style16html;
+					$( ".wprevpre_bgcolor2" ).hide();
+					$( ".wprevpre_tcolor3" ).show();
+				} else if(templatenum=='17'){
+					previewhtml = style17html;
+					$( ".wprevpre_bgcolor2" ).hide();
+					$( ".wprevpre_tcolor3" ).show();
 				}
 				$( "#wpyelp_template_preview" ).html(prestyle+previewhtml);
 				updateProStyleNote(templatenum);
@@ -625,6 +669,10 @@
 			//avatar option: show real photo / hide / mystery silhouette / initials
 			if(avataropt=='hide'){
 				$( ".wprev_avatar_opt" ).hide();
+				//no avatar: style 16 aims the bubble tail at the name, style 17 drops the avatar column
+				$( ".wprevpro_t16_avatar, .wprevpro_t17_avatar" ).hide();
+				$( ".wprevpro_t16_DIV_1" ).addClass( "wprevpro_t16_no_avatar" );
+				$( ".wprevpro_t17_DIV_1" ).addClass( "wprevpro_t17_no_avatar" );
 				if(templatenum=='6'){
 					$( ".wpproslider_t6_DIV_3L" ).hide();
 				}
@@ -1376,7 +1424,7 @@ if(isProOnlyTemplateStyle($( "#wpyelp_template_style" ).val())){
 		//------------Template settings tabs (Style / General / Filter / Badge / AI)------------
 		var currenttab = 0;
 		function hideAllSettingTables(){
-			$( "#settingtable0, #settingtable1, #settingtable2, #settingtable3, #settingtable4" ).hide();
+			$( "#settingtable0, #settingtable1, #settingtable2, #settingtable3, #settingtable4, #settingtable5" ).hide();
 		}
 		$( ".gotopage0" ).click(function() {
 			hideAllSettingTables();
@@ -1408,8 +1456,15 @@ if(isProOnlyTemplateStyle($( "#wpyelp_template_style" ).val())){
 			currenttab = 4;
 			changecurrenttab(currenttab);
 		});
+		$( ".gotopage5" ).click(function() {
+			hideAllSettingTables();
+			$( "#settingtable5" ).fadeIn();
+			currenttab = 5;
+			changecurrenttab(currenttab);
+		});
 		function changecurrenttab(ctab){
 			$( ".settingtab" ).removeClass( "nav-tab-active" );
+			if(ctab==5){ $( "#settingtab5" ).addClass("nav-tab-active"); }
 			if(ctab==0){ $( "#settingtab0" ).addClass("nav-tab-active"); }
 			if(ctab==1){ $( "#settingtab1" ).addClass("nav-tab-active"); }
 			if(ctab==2){ $( "#settingtab2" ).addClass("nav-tab-active"); }

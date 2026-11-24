@@ -73,7 +73,7 @@ class WP_Yelp_Review_Slider_Block {
 			return;
 		}
 
-		$public = new WP_Yelp_Review_Public( 'wp-yelp-review-slider', '9.6' );
+		$public = new WP_Yelp_Review_Public( 'wp-yelp-review-slider', '9.7' );
 		$public->enqueue_styles();
 		$public->enqueue_scripts();
 
@@ -119,7 +119,7 @@ class WP_Yelp_Review_Slider_Block {
 		$path = wprev_yelp_plugin_dir . ltrim( $relative, '/' );
 		$time = file_exists( $path ) ? filemtime( $path ) : false;
 
-		return $time ? (string) $time : '9.6';
+		return $time ? (string) $time : '9.7';
 	}
 
 	/**
